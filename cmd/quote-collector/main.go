@@ -5,8 +5,8 @@ import (
 	"github.com/gaaon/quote-collector/pkg/google"
 	"github.com/gaaon/quote-collector/pkg/quotewiki"
 	"log"
-	"sort"
-	"sync"
+	"os"
+	"time"
 )
 
 type CompositeName struct {
@@ -34,38 +34,16 @@ func main() {
 		log.Fatal(err)
 	}
 
-	nameChan := make(chan string, len(peopleList))
+	f, _ := os.Create("composite_snapshot.txt")
+	for i := 0; i < len(peopleList); i++ {
+		original := peopleList[i]
+		k, err  := google.GetKoreanNameFromEnglish(original)
+		if err != nil {
+			fmt.Println(err.Error())
+		}
 
-	for _, name := range peopleList[0: 1] {
-		nameChan <- name
-	}
+		_, _ = f.WriteString(original + "\t" + k + "\n")
 
-	var names []CompositeName
-	var mutex sync.Mutex
-	var wg sync.WaitGroup
-	for i := 0; i < 100; i++ {
-		wg.Add(1)
-		go func(num int) {
-			for name := range nameChan {
-				k, err  := google.GetKoreanNameFromEnglish(name)
-				if err != nil {
-					fmt.Println(err.Error())
-				}
-				mutex.Lock()
-				names = append(names, CompositeName{name, k})
-				fmt.Println(CompositeName{name, k})
-				mutex.Unlock()
-			}
-
-			wg.Done()
-		}(i)
-	}
-
-	close(nameChan)
-	wg.Wait()
-
-	sort.Sort(CompositeNames(names))
-	for _, cName := range names {
-		println(cName.Original, cName.Korean)
+		time.Sleep(10 * time.Second)
 	}
 }
