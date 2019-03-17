@@ -94,3 +94,5 @@ fabric.properties
 *.out
 
 .idea
+
+snapshot.txt
