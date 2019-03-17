@@ -6,6 +6,7 @@ import (
 	"github.com/gaaon/quote-collector/pkg/quotewiki"
 	"log"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -41,6 +42,20 @@ func main() {
 		k, err  := google.GetKoreanNameFromEnglish(original)
 		if err != nil {
 			fmt.Println(err.Error())
+		}
+
+		if k == "" {
+			splits := strings.Split(original, ",")
+			if len(splits) == 2 {
+				newName := strings.TrimSpace(splits[1]) + ", " + strings.TrimSpace(splits[0])
+				println("newName", newName)
+				time.Sleep(10 * time.Second)
+				k, err = google.GetKoreanNameFromEnglish(newName)
+				println("newK", k)
+				if err != nil {
+					fmt.Println(err.Error())
+				}
+			}
 		}
 
 		if k == "" {
