@@ -35,6 +35,7 @@ func main() {
 	}
 
 	f, _ := os.Create("composite_snapshot.txt")
+	failed, _ := os.Create("failed_to_find.txt")
 	for i := 0; i < len(peopleList); i++ {
 		original := peopleList[i]
 		k, err  := google.GetKoreanNameFromEnglish(original)
@@ -42,6 +43,9 @@ func main() {
 			fmt.Println(err.Error())
 		}
 
+		if k == "" {
+			_, _ = failed.WriteString(original + "\n")
+		}
 		_, _ = f.WriteString(original + "\t" + k + "\n")
 
 		if i % 100 == 0 {
