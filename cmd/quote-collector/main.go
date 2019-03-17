@@ -44,6 +44,9 @@ func main() {
 
 		_, _ = f.WriteString(original + "\t" + k + "\n")
 
+		if i % 100 == 0 {
+			fmt.Printf("%d개 다운 성공\n", i)
+		}
 		time.Sleep(10 * time.Second)
 	}
 }
