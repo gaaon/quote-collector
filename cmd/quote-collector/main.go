@@ -6,7 +6,6 @@ import (
 	"github.com/gaaon/quote-collector/pkg/quotewiki"
 	"log"
 	"os"
-	"strings"
 	"time"
 )
 
@@ -36,29 +35,24 @@ func main() {
 	failed, _ := os.Create("data/" + fileVersion + "/failed_to_find.txt")
 	for i := 0; i < len(peopleList); i++ {
 		original := peopleList[i]
-		k, err  := google.GetKoreanNameFromEnglish(original)
+		k, err  := google.GetKoreanNameFromEnglish(original.TitleName)
 		if err != nil {
 			fmt.Println(err.Error())
 		}
 
 		if k == "" {
-			splits := strings.Split(original, ",")
-			if len(splits) == 2 {
-				newName := strings.TrimSpace(splits[1]) + ", " + strings.TrimSpace(splits[0])
-				println("newName", newName)
-				time.Sleep(10 * time.Second)
-				k, err = google.GetKoreanNameFromEnglish(newName)
-				println("newK", k)
-				if err != nil {
-					fmt.Println(err.Error())
-				}
+			newName := original.TextName
+			k, err = google.GetKoreanNameFromEnglish(newName)
+			println("[newName, newK] ", newName, k)
+			if err != nil {
+				fmt.Println(err.Error())
 			}
 		}
 
 		if k == "" {
-			_, _ = failed.WriteString(original + "\n")
+			_, _ = failed.WriteString(original.TitleName + "\t" + original.TextName + "\n")
 		}
-		_, _ = f.WriteString(original + "\t" + k + "\n")
+		_, _ = f.WriteString(original.TitleName + "\t" + original.TextName + "\t" + k + "\n")
 
 		if i % 100 == 0 {
 			fmt.Printf("%d개 다운 성공\n", i)

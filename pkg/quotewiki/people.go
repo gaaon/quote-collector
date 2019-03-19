@@ -20,6 +20,29 @@ func init() {
 	}
 }
 
+type CompositeName struct {
+	TitleName string
+	TextName  string
+}
+
+type CompositeNames []CompositeName
+
+func (c CompositeNames) Len() int {
+	return len(c)
+}
+
+func (c CompositeNames) Swap(i, j int) {
+	c[i], c[j] = c[j], c[i];
+}
+
+func (c CompositeNames) Less(i, j int) bool {
+	if c[i].TitleName == c[j].TitleName {
+		return c[i].TextName < c[j].TextName
+	}
+
+	return c[i].TitleName < c[j].TitleName
+}
+
 func getPeopleListHtmlByName(nameChar string) (body io.ReadCloser, err error) {
 	req, err := http.NewRequest(
 		"GET",
@@ -38,7 +61,7 @@ func getPeopleListHtmlByName(nameChar string) (body io.ReadCloser, err error) {
 	return res.Body, nil
 }
 
-func GetPeopleListByReader(bodyReader io.ReadCloser) (peopleList []string, err error) {
+func GetPeopleListByReader(bodyReader io.ReadCloser) (peopleList []CompositeName, err error) {
 	defer bodyReader.Close()
 
 	doc, err := goquery.NewDocumentFromReader(bodyReader)
@@ -49,14 +72,16 @@ func GetPeopleListByReader(bodyReader io.ReadCloser) (peopleList []string, err e
 	doc.Find("h3 .mw-headline").Parent().Next().Each(func(_ int, peopleUl *goquery.Selection) {
 		peopleUl.Find("li a").Each(func(_ int, nameLink *goquery.Selection) {
 			name := strings.TrimSpace(nameLink.Text())
-			peopleList = append(peopleList, name)
+			peopleList = append(peopleList, CompositeName {
+				name,
+				nameLink.Text()})
 		})
 	})
 
 	return
 }
 
-func GetPeopleListByReaderWithAnchor(bodyReader io.ReadCloser) (peopleList []string, err error) {
+func GetPeopleListByReaderWithAnchor(bodyReader io.ReadCloser) (peopleList []CompositeName, err error) {
 	defer bodyReader.Close()
 
 	doc, err := goquery.NewDocumentFromReader(bodyReader)
@@ -69,7 +94,9 @@ func GetPeopleListByReaderWithAnchor(bodyReader io.ReadCloser) (peopleList []str
 			titleAttr, exists := nameLink.Attr("title")
 			if exists {
 				name := strings.TrimSpace(titleAttr)
-				peopleList = append(peopleList, name)
+				peopleList = append(peopleList, CompositeName {
+					name,
+					nameLink.Text()})
 			}
 		})
 	})
@@ -80,7 +107,7 @@ func GetPeopleListByReaderWithAnchor(bodyReader io.ReadCloser) (peopleList []str
 var nameRanges = []string{
 	"A", "B", "C", "D", "E-F", "G", "H", "I-J", "K", "L", "M", "N-O", "P", "Q-R", "S", "T-V", "W-Z",
 }
-func GetPeopleListFromAToZ() (peopleList []string, err error) {
+func GetPeopleListFromAToZ() (peopleList []CompositeName, err error) {
 	var wg sync.WaitGroup
 	var mutex sync.Mutex
 
@@ -89,7 +116,7 @@ func GetPeopleListFromAToZ() (peopleList []string, err error) {
 		go func(_nameRange string) {
 			var (
 				bodyReader io.ReadCloser
-				partialPeopleList []string
+				partialPeopleList []CompositeName
 			)
 
 			if bodyReader, err = getPeopleListHtmlByName(_nameRange); err != nil {
@@ -110,10 +137,11 @@ func GetPeopleListFromAToZ() (peopleList []string, err error) {
 
 	wg.Wait()
 
-	sort.Strings(peopleList)
+	sort.Sort(CompositeNames(peopleList))
+
 	index := 0
 	for i, name := range peopleList {
-		if name[0] < 'A' || name[0] > 'Z' {
+		if name.TitleName[0] < 'A' || name.TitleName[0] > 'Z' {
 			index = i
 			break
 		}
@@ -121,7 +149,7 @@ func GetPeopleListFromAToZ() (peopleList []string, err error) {
 	return peopleList[0: index], nil
 }
 
-func saveIntoSnapshot(peopleList []string, fileVersion string) (err error) {
+func saveIntoSnapshot(peopleList []CompositeName, fileVersion string) (err error) {
 	f, err := os.Create("data/" + fileVersion + "/snapshot.txt")
 	if err != nil {
 		return
@@ -134,13 +162,13 @@ func saveIntoSnapshot(peopleList []string, fileVersion string) (err error) {
 			newLineOrNot = "\n"
 		}
 
-		_, _ = f.Write([]byte(name + newLineOrNot))
+		_, _ = f.Write([]byte(name.TitleName + "\t" + name.TextName + newLineOrNot))
 	}
 
 	return
 }
 
-func GetPeopleListFromSnapshot(fileVersion string) (peopleList []string, err error) {
+func GetPeopleListFromSnapshot(fileVersion string) (peopleList []CompositeName, err error) {
 	f, err := os.Open("data/" + fileVersion + "/snapshot.txt")
 	defer f.Close()
 
@@ -162,6 +190,13 @@ func GetPeopleListFromSnapshot(fileVersion string) (peopleList []string, err err
 		}
 
 		println("Read from local")
-		return strings.Split(string(content), "\n"), nil
+
+		splits := strings.Split(string(content), "\n")
+		for _, split := range splits {
+			names := strings.Split(split, "\t")
+			peopleList = append(peopleList, CompositeName{names[0], names[1]})
+		}
+
+		return
 	}
 }
