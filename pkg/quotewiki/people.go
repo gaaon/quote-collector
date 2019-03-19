@@ -56,6 +56,27 @@ func GetPeopleListByReader(bodyReader io.ReadCloser) (peopleList []string, err e
 	return
 }
 
+func GetPeopleListByReaderWithAnchor(bodyReader io.ReadCloser) (peopleList []string, err error) {
+	defer bodyReader.Close()
+
+	doc, err := goquery.NewDocumentFromReader(bodyReader)
+	if err != nil {
+		return
+	}
+
+	doc.Find("h3 .mw-headline").Parent().Next().Each(func(_ int, peopleUl *goquery.Selection) {
+		peopleUl.Find("li a").Each(func(_ int, nameLink *goquery.Selection) {
+			titleAttr, exists := nameLink.Attr("title")
+			if exists {
+				name := strings.TrimSpace(titleAttr)
+				peopleList = append(peopleList, name)
+			}
+		})
+	})
+
+	return
+}
+
 var nameRanges = []string{
 	"A", "B", "C", "D", "E-F", "G", "H", "I-J", "K", "L", "M", "N-O", "P", "Q-R", "S", "T-V", "W-Z",
 }
@@ -75,7 +96,7 @@ func GetPeopleListFromAToZ() (peopleList []string, err error) {
 				return
 			}
 
-			if partialPeopleList, err = GetPeopleListByReader(bodyReader); err != nil {
+			if partialPeopleList, err = GetPeopleListByReaderWithAnchor(bodyReader); err != nil {
 				return
 			}
 
@@ -100,8 +121,8 @@ func GetPeopleListFromAToZ() (peopleList []string, err error) {
 	return peopleList[0: index], nil
 }
 
-func saveIntoSnapshot(peopleList []string) (err error) {
-	f, err := os.Create("snapshot.txt")
+func saveIntoSnapshot(peopleList []string, fileVersion string) (err error) {
+	f, err := os.Create("data/" + fileVersion + "/snapshot.txt")
 	if err != nil {
 		return
 	}
@@ -119,8 +140,8 @@ func saveIntoSnapshot(peopleList []string) (err error) {
 	return
 }
 
-func GetPeopleListFromSnapshot() (peopleList []string, err error) {
-	f, err := os.Open("snapshot.txt")
+func GetPeopleListFromSnapshot(fileVersion string) (peopleList []string, err error) {
+	f, err := os.Open("data/" + fileVersion + "/snapshot.txt")
 	defer f.Close()
 
 	if os.IsNotExist(err) {
@@ -128,7 +149,7 @@ func GetPeopleListFromSnapshot() (peopleList []string, err error) {
 			return
 		}
 
-		if err = saveIntoSnapshot(peopleList); err != nil {
+		if err = saveIntoSnapshot(peopleList, fileVersion); err != nil {
 			return
 		}
 

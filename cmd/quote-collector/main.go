@@ -10,33 +10,30 @@ import (
 	"time"
 )
 
-type CompositeName struct {
-	Original string
-	Korean string
-}
+func getFileVersion() (fileVersion string) {
+	if len(os.Args) > 1 {
+		fileVersion = os.Args[1]
+	} else {
+		fileVersion = "1"
+	}
 
-type CompositeNames []CompositeName
-
-func (c CompositeNames) Len() int {
-	return len(c)
-}
-
-func (c CompositeNames) Less(i, j int) bool {
-	return c[i].Original <c[j].Original
-}
-
-func (c CompositeNames) Swap(i, j int) {
-	c[i], c[j] = c[j], c[i]
+	return
 }
 
 func main() {
-	peopleList, err := quotewiki.GetPeopleListFromSnapshot()
+	fileVersion := getFileVersion()
+	_, err := os.Stat("data/" + fileVersion)
+	if os.IsNotExist(err) {
+		_ = os.MkdirAll("data/" + fileVersion, os.ModePerm)
+	}
+
+	peopleList, err := quotewiki.GetPeopleListFromSnapshot(fileVersion)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	f, _ := os.Create("composite_snapshot.txt")
-	failed, _ := os.Create("failed_to_find.txt")
+	f, _ := os.Create("data/" + fileVersion + "/composite_snapshot.txt")
+	failed, _ := os.Create("data/" + fileVersion + "/failed_to_find.txt")
 	for i := 0; i < len(peopleList); i++ {
 		original := peopleList[i]
 		k, err  := google.GetKoreanNameFromEnglish(original)
