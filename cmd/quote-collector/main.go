@@ -9,24 +9,8 @@ import (
 	"time"
 )
 
-func getFileVersion() (fileVersion string) {
-	if len(os.Args) > 1 {
-		fileVersion = os.Args[1]
-	} else {
-		fileVersion = "1"
-	}
-
-	return
-}
-
-func main() {
-	fileVersion := getFileVersion()
-	_, err := os.Stat("data/" + fileVersion)
-	if os.IsNotExist(err) {
-		_ = os.MkdirAll("data/" + fileVersion, os.ModePerm)
-	}
-
-	peopleList, err := quotewiki.GetPeopleListFromSnapshot(fileVersion)
+func getKoreanNameFromEng() {
+	peopleList, err := quotewiki.FindPeopleListFromSnapshot()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -59,4 +43,25 @@ func main() {
 		}
 		time.Sleep(10 * time.Second)
 	}
+}
+
+func getQuotesFromPeopleList() {
+	quotes, err := quotewiki.FindPeopleListFromSnapshot()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, name := range quotes {
+		println(name.TitleName)
+	}
+	//quotewiki.GetQuotesFromCompositeName(quotes[0])
+}
+
+func main() {
+	peopleList, err := quotewiki.FindPeopleListFromDB()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	println(len(peopleList))
 }

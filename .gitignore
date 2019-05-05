@@ -95,4 +95,8 @@ fabric.properties
 
 .idea
 
-data
+/data
+
+pkg/quotewiki/enwikiquote-latest-pages-articles.xml
+
+db

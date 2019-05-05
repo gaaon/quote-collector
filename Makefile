@@ -1,5 +1,5 @@
 test:
-	go test -v $(shell go list ./... | grep -v /vendor/)
+	go test -race -v $(shell go list ./pkg/... | grep -v /vendor/) -coverprofile=c.out && go tool cover -html=c.out
 
 BINARY        ?= azr-manager
 SOURCES        = $(shell find . -name '*.go')
@@ -10,6 +10,9 @@ LDFLAGS       ?= -X github.com/kubernetes-incubator/external-dns/pkg/apis/extern
 
 build:
 	CGO_ENABLED=0 go build -o bin/${BINARY} ${BUILD_FLAGS} cmd/quote-collector/*.go
+
+collect:
+	go run cmd/collect-people/main.go
 
 run:
 	go run cmd/quote-collector/main.go ${FILE_VERSION}
