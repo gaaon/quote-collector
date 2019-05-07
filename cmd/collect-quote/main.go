@@ -4,6 +4,8 @@ import (
 	"github.com/gaaon/quote-collector/pkg/model"
 	"github.com/gaaon/quote-collector/pkg/repository"
 	"github.com/gaaon/quote-collector/pkg/service/translate"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -59,6 +61,40 @@ func findQuotesFromMediaWiki() {
 	println("total characters count: ", total)
 }
 
+func findLastSuccessQuoteTranslation(entities []model.QuoteEntity) int {
+	f, err := os.Open("data/lastSuccessQuoteTrans.txt")
+	if os.IsNotExist(err) {
+		return -1
+	}
+	defer f.Close()
+
+	contentRaw, err := ioutil.ReadAll(f)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	content := string(contentRaw)
+
+	if content == "" {
+		return -1
+	} else {
+		for i, quote := range entities {
+			if quote.Id.String() == content {
+				return i
+			}
+		}
+
+		return -1
+	}
+}
+
+func saveLastSuccessQuoteTranslation(id *primitive.ObjectID) error {
+	return ioutil.WriteFile(
+		"data/lastSuccessQuoteTrans.txt",
+		[]byte(id.String()),
+		0644)
+}
+
 func main() {
 	task, exists := os.LookupEnv("COLLECT_TASK")
 	if !exists {
@@ -75,7 +111,14 @@ func main() {
 			log.Fatal(err)
 		}
 
-		for _, quoteEntity := range quoteEntities {
+		startIdx := findLastSuccessQuoteTranslation(quoteEntities) + 1
+		println("find startIdx: ", startIdx)
+
+		for i, quoteEntity := range quoteEntities {
+			if i < startIdx {
+				continue
+			}
+
 			content := filterQuoteContent(quoteEntity.Content)
 			if len(content) > 100 {
 				continue
@@ -100,6 +143,11 @@ func main() {
 			println("translated(kakao): ", translatedByKakao)
 			println("translated(naver): ", translatedByNaver)
 			println("translated(google): ", translatedByGoogle)
+
+			if err = saveLastSuccessQuoteTranslation(quoteEntity.Id); err != nil {
+				log.Fatal(err)
+			}
+
 			time.Sleep(10 * time.Second)
 		}
 	}
