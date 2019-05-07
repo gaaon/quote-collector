@@ -1,4 +1,4 @@
-package quotewiki
+package repository
 
 import (
 	"github.com/stretchr/testify/assert"
@@ -30,10 +30,10 @@ func TestDBTestSuite(t *testing.T) {
 func (suite *DBTestSuite) TestFindPeopleList() {
 	assertT := assert.New(suite.T())
 
-	_, err := InsertPersonIntoDB("Zhuge Liang", "제갈량", "")
+	_, err := InsertPerson("Zhuge Liang", "제갈량", "")
 	assertT.NoError(err)
 
-	peopleList ,err := FindPeopleListFromDB()
+	peopleList ,err := FindPeopleList()
 	assertT.NoError(err)
 
 	assertT.Len(peopleList, 1)

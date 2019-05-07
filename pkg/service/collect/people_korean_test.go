@@ -1,4 +1,4 @@
-package google
+package collect
 
 import (
 	"github.com/stretchr/testify/assert"

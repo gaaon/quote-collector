@@ -1,4 +1,4 @@
-package quotewiki
+package collect
 
 import (
 	"net/http"

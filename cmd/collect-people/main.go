@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/gaaon/quote-collector/pkg/google"
-	"github.com/gaaon/quote-collector/pkg/quotewiki"
+	"github.com/gaaon/quote-collector/pkg/model"
+	"github.com/gaaon/quote-collector/pkg/repository"
+	"github.com/gaaon/quote-collector/pkg/service/collect"
 	"io/ioutil"
 	"log"
 	"os"
@@ -41,20 +42,20 @@ func findKoreanNameMapFromSnapshot() (koreanNameMap map[string]string, err error
 	return
 }
 
-func findKoreanNameFromEng(peopleList []quotewiki.Person) {
+func findKoreanNameFromEng(peopleList []model.Person) {
 	f, _ := os.Create("data/korean_snapshot.txt")
 	failed, _ := os.Create("data/failed_to_find.txt")
 
 	for i := 0; i < len(peopleList); i++ {
 		original := peopleList[i]
-		k, err  := google.GetKoreanNameFromEnglish(original.FullName)
+		k, err  := collect.GetKoreanNameFromEnglish(original.FullName)
 		if err != nil {
 			fmt.Println(err.Error())
 		}
 
 		if k == "" {
 			newName := original.ReversedName
-			k, err = google.GetKoreanNameFromEnglish(newName)
+			k, err = collect.GetKoreanNameFromEnglish(newName)
 			println("[newName, newK] ", newName, k)
 			if err != nil {
 				fmt.Println(err.Error())
@@ -74,13 +75,13 @@ func findKoreanNameFromEng(peopleList []quotewiki.Person) {
 	}
 }
 
-func migrateKoreanSnapshotWithDefault(peopleList []quotewiki.Person, koreanNameMap map[string]string) (
-	migratedPersonList []quotewiki.Person, err error) {
+func migrateKoreanSnapshotWithDefault(peopleList []model.Person, koreanNameMap map[string]string) (
+	migratedPersonList []model.Person, err error) {
 
 	for _, person := range peopleList {
 		koreanName, exists := koreanNameMap[person.FullName]
 		if exists {
-			migratedPersonList = append(migratedPersonList, quotewiki.Person{
+			migratedPersonList = append(migratedPersonList, model.Person{
 				FullName: person.FullName,
 				ReversedName: person.ReversedName,
 				Link: person.Link,
@@ -109,7 +110,7 @@ func main() {
 	case "file": {
 		switch task {
 		case "find": {
-			peopleList, err := quotewiki.FindPeopleListFromSnapshot()
+			peopleList, err := collect.FindPeopleListFromSnapshot()
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -117,7 +118,7 @@ func main() {
 			println("Find people count ", len(peopleList))
 		}
 		case "korean": {
-			peopleList, err := quotewiki.FindPeopleListFromSnapshot()
+			peopleList, err := collect.FindPeopleListFromSnapshot()
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -133,7 +134,7 @@ func main() {
 	case "db": {
 		switch task {
 		case "migrate": {
-			peopleList, err := quotewiki.FindPeopleListFromSnapshot()
+			peopleList, err := collect.FindPeopleListFromSnapshot()
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -149,14 +150,14 @@ func main() {
 			}
 
 			for _, person := range migratedPeopleList {
-				_, err := quotewiki.InsertPersonIntoDB(person.FullName, person.KoreanName, person.Link)
+				_, err := repository.InsertPerson(person.FullName, person.KoreanName, person.Link)
 				if err != nil {
 					log.Fatal(nil)
 				}
 			}
 		}
 		case "find": {
-			peopleList, err := quotewiki.FindPeopleListFromDB()
+			peopleList, err := repository.FindPeopleList()
 			if err != nil {
 				log.Fatal(err)
 			}

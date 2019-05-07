@@ -1,19 +1,10 @@
-package google
+package collect
 
 import (
 	"github.com/PuerkitoBio/goquery"
 	"net/http"
 	"net/url"
-	"time"
 )
-
-var client *http.Client
-
-func init() {
-	client = &http.Client{
-		Timeout: time.Second * 10,
-	}
-}
 
 func GetKoreanNameFromEnglish(name string) (koreanName string, err error){
 	urlStr := "https://google.co.kr/search?ie=UTF-8&q=" + url.QueryEscape(name)

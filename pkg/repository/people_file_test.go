@@ -1,8 +1,8 @@
-package quotewiki
+package repository
 
 import (
+	"github.com/gaaon/quote-collector/pkg/model"
 	"github.com/stretchr/testify/assert"
-	"strings"
 	"testing"
 )
 
@@ -24,21 +24,21 @@ func TestSaveIntoWriter(t *testing.T) {
 	assertT := assert.New(t)
 
 	testWriter := &TestWriter{}
-	var peopleList []Person
+	var peopleList []model.Person
 
-	peopleList = append(peopleList, Person{
+	peopleList = append(peopleList, model.Person{
 		FullName: "Albert Einstein",
 		ReversedName: "Einstein, Albert",
 		Link: "/wiki/Albert_Einstein",
 	})
 
-	peopleList = append(peopleList, Person{
+	peopleList = append(peopleList, model.Person{
 		FullName: "John von Neumann",
 		ReversedName: "Neumann, John von",
 		Link: "/wiki/John_von_Neumann",
 	})
 
-	err := saveIntoWriter(peopleList, testWriter)
+	err := savePeopleListIntoWriter(testWriter, peopleList)
 	assertT.NoError(err)
 
 	assertT.Equal(
@@ -47,26 +47,3 @@ func TestSaveIntoWriter(t *testing.T) {
 			"John von Neumann\tNeumann, John von\t/wiki/John_von_Neumann")
 }
 
-func TestGetPeopleListHtmlByA(t *testing.T) {
-	assertT := assert.New(t)
-
-	bodyReader, err := getPeopleListHtmlByName("A")
-	assertT.NoError(err)
-
-	defer bodyReader.Close()
-	assertT.NotNil(bodyReader)
-}
-
-func TestGetPeopleListFromAToZ(t *testing.T) {
-	assertT := assert.New(t)
-
-	people, err := getPeopleListFromAToZ()
-	assertT.NoError(err)
-	assertT.NotNil(people)
-
-	firstPeople := people[0]
-	assertT.True(strings.ToLower(string(firstPeople.FullName[0])) == "a")
-
-	lastPeople := people[len(people) - 1]
-	assertT.True(strings.ToLower(string(lastPeople.FullName[0])) == "z")
-}
