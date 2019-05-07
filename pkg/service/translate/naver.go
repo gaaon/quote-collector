@@ -3,6 +3,9 @@ package translate
 import (
 	"encoding/base64"
 	"encoding/json"
+	"github.com/gaaon/quote-collector/pkg/constant"
+	"github.com/gaaon/quote-collector/pkg/model"
+	"github.com/gaaon/quote-collector/pkg/repository"
 	"github.com/google/uuid"
 	"io/ioutil"
 	"log"
@@ -15,7 +18,7 @@ type translateNaverResponse struct {
 	Translated string `json:"translatedText"`
 }
 
-func TranslateByNaver(content string) (string, error) {
+func FindTranslationByNaver(content string) (string, error) {
 
 	transId := uuid.New().String()
 
@@ -49,4 +52,20 @@ func TranslateByNaver(content string) (string, error) {
 	}
 
 	return nRes.Translated, nil
+}
+
+func FindTranslationByNaverAndSave(content string, entity model.QuoteEntity) (string, interface{}, error) {
+	translated, err := FindTranslationByNaver(content)
+	if err != nil {
+		return "", nil, err
+	}
+
+	_id, err := repository.InsertTranslation(model.TranslationEntity{
+		Content:   translated,
+		Vendor:    constant.NAVER,
+		QuoteId:   entity.Id,
+		CreatorId: entity.CreatorId,
+	})
+
+	return translated, _id, err
 }

@@ -9,7 +9,7 @@ func TestTranslateByKakao(t *testing.T) {
 	assertT := assert.New(t)
 
 	content := "hello, world"
-	translated, err := TranslateByKakao(content)
+	translated, err := FindTranslationByKakao(content)
 	assertT.NoError(err)
 
 	assertT.Contains(translated, "안녕")

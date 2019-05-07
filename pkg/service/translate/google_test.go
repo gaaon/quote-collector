@@ -9,7 +9,7 @@ func TestTranslateByGoogle(t *testing.T) {
 	assertT := assert.New(t)
 
 	content := "hello, world"
-	translated, err := TranslateByGoogle(content)
+	translated, err := FindTranslationByGoogle(content)
 	assertT.NoError(err)
 
 	assertT.Contains(translated, "안녕")

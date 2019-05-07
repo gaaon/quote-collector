@@ -9,7 +9,7 @@ func TestTranslateByNaver(t *testing.T) {
 	assertT := assert.New(t)
 
 	content := "hello, world"
-	translated, err := TranslateByNaver(content)
+	translated, err := FindTranslationByNaver(content)
 	assertT.NoError(err)
 
 	assertT.Contains(translated, "안녕")

@@ -1,14 +1,21 @@
 package main
 
 import (
-	"github.com/gaaon/quote-collector/pkg/constant"
 	"github.com/gaaon/quote-collector/pkg/model"
 	"github.com/gaaon/quote-collector/pkg/repository"
 	"github.com/gaaon/quote-collector/pkg/service/translate"
 	"log"
 	"os"
+	"strings"
 	"time"
 )
+
+func filterQuoteContent(content string) string{
+	content = strings.ReplaceAll(content, "<br/>", " ")
+	content = strings.ReplaceAll(content, "<br>", " ")
+	content = strings.ReplaceAll(content, "<BR>", " ")
+	return strings.ReplaceAll(content, "<br />", " ")
+}
 
 func findQuotesFromMediaWiki() {
 	peopleList, err := repository.FindPeopleList()
@@ -68,54 +75,28 @@ func main() {
 			log.Fatal(err)
 		}
 
-		var (
-			translatedByKakao string
-			translatedByNaver string
-			translatedByGoogle string
-		)
-
 		for _, quoteEntity := range quoteEntities {
-			if len(quoteEntity.Content) > 100 {
+			content := filterQuoteContent(quoteEntity.Content)
+			if len(content) > 100 {
 				continue
 			}
 
-			if translatedByKakao, err = translate.TranslateByKakao(quoteEntity.Content); err != nil {
+			translatedByNaver, _, err := translate.FindTranslationByNaverAndSave(content, quoteEntity)
+			if err != nil {
 				log.Fatal(err)
 			}
 
-			if translatedByGoogle, err = translate.TranslateByGoogle(quoteEntity.Content); err != nil {
+			translatedByGoogle, _, err := translate.FindTranslationByGoogleAndSave(content, quoteEntity)
+			if err != nil {
 				log.Fatal(err)
 			}
 
-			if translatedByNaver, err = translate.TranslateByNaver(quoteEntity.Content); err != nil {
+			translatedByKakao, _, err := translate.FindTranslationByKakaoAndSave(content, quoteEntity)
+			if err != nil {
 				log.Fatal(err)
 			}
 
-			if _, err = repository.InsertTranslation(model.TranslationEntity{
-				Content: translatedByKakao,
-				Vendor: constant.KAKAO,
-				QuoteId: quoteEntity.Id,
-			}); err != nil {
-				log.Fatal(err)
-			}
-
-			if _, err = repository.InsertTranslation(model.TranslationEntity{
-				Content: translatedByNaver,
-				Vendor: constant.NAVER,
-				QuoteId: quoteEntity.Id,
-			}); err != nil {
-				log.Fatal(err)
-			}
-
-			if _, err = repository.InsertTranslation(model.TranslationEntity{
-				Content: translatedByGoogle,
-				Vendor: constant.GOOGLE,
-				QuoteId: quoteEntity.Id,
-			}); err != nil {
-				log.Fatal(err)
-			}
-
-			println("origin: ", quoteEntity.Content)
+			println("origin: ", content)
 			println("translated(kakao): ", translatedByKakao)
 			println("translated(naver): ", translatedByNaver)
 			println("translated(google): ", translatedByGoogle)

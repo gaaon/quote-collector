@@ -2,6 +2,9 @@ package translate
 
 import (
 	"encoding/json"
+	"github.com/gaaon/quote-collector/pkg/constant"
+	"github.com/gaaon/quote-collector/pkg/model"
+	"github.com/gaaon/quote-collector/pkg/repository"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -18,7 +21,7 @@ type translateKakaoResponse struct {
 	Result translateKakaoResult `json:"result"`
 }
 
-func TranslateByKakao(content string) (string, error) {
+func FindTranslationByKakao(content string) (string, error) {
 	form := url.Values{}
 	form.Add("lang", "enkr")
 	form.Add("q", content)
@@ -46,4 +49,20 @@ func TranslateByKakao(content string) (string, error) {
 	}
 
 	return tRes.Result.Translated, nil
+}
+
+func FindTranslationByKakaoAndSave(content string, entity model.QuoteEntity) (string, interface{}, error) {
+	translated, err := FindTranslationByKakao(content)
+	if err != nil {
+		return "", nil, err
+	}
+
+	_id, err := repository.InsertTranslation(model.TranslationEntity{
+		Content:   translated,
+		Vendor:    constant.KAKAO,
+		QuoteId:   entity.Id,
+		CreatorId: entity.CreatorId,
+	})
+
+	return translated, _id, err
 }
