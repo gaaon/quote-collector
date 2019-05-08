@@ -3,6 +3,7 @@ package collect
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/gaaon/quote-collector/pkg/model"
 	"io/ioutil"
 	"net/http"
@@ -11,6 +12,11 @@ import (
 
 const brainyQuoteBaseUrl = "https://www.brainyquote.com/"
 const brainyQuoteApiUrl = "https://www.brainyquote.com/api/inf"
+
+type QuotesContentResponse struct {
+	Content string `json:"content"`
+	Count int `json:"qCount"`
+}
 
 type QuotesContentRequest struct {
 	Typ string `json:"typ"`
@@ -85,6 +91,10 @@ func FindQuotesInBrainy(vid string, pid string, pg int) ([]model.Quote, error) {
 	req, err := http.NewRequest(
 		"POST",
 		brainyQuoteApiUrl, bytes.NewReader(reqBodyStr))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Content-Type", "application/json")
 
 	res, err := client.Do(req)
 	if err != nil {
@@ -98,7 +108,13 @@ func FindQuotesInBrainy(vid string, pid string, pg int) ([]model.Quote, error) {
 		return nil, err
 	}
 
-	println(bodyRaw)
+	println(string(bodyRaw))
+	var resBody QuotesContentResponse
+	if err = json.Unmarshal(bodyRaw, &resBody); err != nil {
+		return nil, err
+	}
+
+	fmt.Printf("%+v\n", resBody)
 
 	return nil, nil
 }

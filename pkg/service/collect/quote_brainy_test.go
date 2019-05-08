@@ -26,5 +26,6 @@ func TestFindQuotesInBrainy(t *testing.T) {
 	vid, pid, err := FindVidAndPersonIdInBrainy(path)
 	assertT.NoError(err)
 
-	println(vid, pid)
+	_, err = FindQuotesInBrainy(vid, pid, 1)
+	assertT.NoError(err)
 }
