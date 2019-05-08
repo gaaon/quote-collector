@@ -123,6 +123,8 @@ func main() {
 				log.Fatal(err)
 			}
 
+			hoursToCollect := len(peopleList) * 10 / 60 / 60
+			fmt.Printf("time for finding: %d hours\n", hoursToCollect)
 			findKoreanNameFromEng(peopleList)
 		}
 		default:
