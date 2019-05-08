@@ -23,7 +23,6 @@ func GetKoreanNameFromEnglish(name string) (koreanName string, err error){
 	}
 	defer res.Body.Close()
 
-	println(res.StatusCode)
 	if doc, err = goquery.NewDocumentFromReader(res.Body); err != nil {
 		return
 	}

@@ -71,7 +71,6 @@ func findKoreanNameFromEng(peopleList []model.Person) {
 			fmt.Printf("%d개 다운 성공\n", i)
 		}
 
-		print
 		time.Sleep(10 * time.Second)
 	}
 }
