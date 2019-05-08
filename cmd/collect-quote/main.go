@@ -109,7 +109,7 @@ func main() {
 
 	switch task {
 	case "find": {
-		findQuotesFromMediaWiki()
+		//findQuotesFromMediaWiki()
 	}
 	case "translate": {
 		quoteEntities, err := repository.FindQuoteEntitiesFromDB()

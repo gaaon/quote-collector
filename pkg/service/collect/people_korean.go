@@ -27,6 +27,8 @@ func GetKoreanNameFromEnglish(name string) (koreanName string, err error){
 		return
 	}
 
+	println(res.StatusCode)
+
 	doc.Find(".kno-fb-ctx.gsmt").Each(func(idx int, el *goquery.Selection) {
 		koreanName = el.Text()
 	})
