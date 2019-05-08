@@ -53,14 +53,14 @@ func findKoreanNameFromEng(peopleList []model.Person) {
 			fmt.Println(err.Error())
 		}
 
-		if k == "" {
-			newName := original.ReversedName
-			k, err = collect.GetKoreanNameFromEnglish(newName)
-			println("[newName, newK] ", newName, k)
-			if err != nil {
-				fmt.Println(err.Error())
-			}
-		}
+		//if k == "" {
+		//	newName := original.ReversedName
+		//	k, err = collect.GetKoreanNameFromEnglish(newName)
+		//	println("[newName, newK] ", newName, k)
+		//	if err != nil {
+		//		fmt.Println(err.Error())
+		//	}
+		//}
 
 		if k == "" {
 			_, _ = failed.WriteString(original.FullName + "\t" + original.ReversedName + "\n")
@@ -71,6 +71,7 @@ func findKoreanNameFromEng(peopleList []model.Person) {
 			fmt.Printf("%d개 다운 성공\n", i)
 		}
 
+		print
 		time.Sleep(10 * time.Second)
 	}
 }
@@ -110,7 +111,7 @@ func main() {
 	case "file": {
 		switch task {
 		case "find": {
-			peopleList, err := collect.FindPeopleListFromSnapshot()
+			peopleList, err := collect.FindPeopleListInBrainyFromSnapshot()
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -118,7 +119,7 @@ func main() {
 			println("Find people count ", len(peopleList))
 		}
 		case "korean": {
-			peopleList, err := collect.FindPeopleListFromSnapshot()
+			peopleList, err := collect.FindPeopleListInBrainyFromSnapshot()
 			if err != nil {
 				log.Fatal(err)
 			}

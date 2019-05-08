@@ -1,41 +1,12 @@
 package repository
 
 import (
-	"github.com/PuerkitoBio/goquery"
 	"github.com/gaaon/quote-collector/pkg/model"
 	"io"
 	"io/ioutil"
 	"os"
 	"strings"
 )
-
-/**
-	find title attribute in anchor if exists from a page
- */
-func FindPeopleListByReaderWithAnchor(bodyReader io.ReadCloser) (peopleList []model.Person, err error) {
-	doc, err := goquery.NewDocumentFromReader(bodyReader)
-	if err != nil {
-		return
-	}
-
-	doc.Find("h3 .mw-headline").Parent().Next().Each(func(_ int, peopleUl *goquery.Selection) {
-		peopleUl.Find("li a").Each(func(_ int, nameLink *goquery.Selection) {
-			titleAttr, exists := nameLink.Attr("title")
-			linkUrl, _ := nameLink.Attr("href")
-
-			if exists {
-				name := strings.TrimSpace(titleAttr)
-				peopleList = append(peopleList, model.Person{
-					FullName: name,
-					ReversedName: nameLink.Text(),
-					Link: linkUrl,
-				})
-			}
-		})
-	})
-
-	return
-}
 
 func savePeopleListIntoWriter(writer io.Writer, peopleList []model.Person) (err error) {
 	for i, name := range peopleList {
@@ -65,10 +36,9 @@ func SavePeopleListIntoSnapshot(peopleList []model.Person) (err error) {
 }
 
 func IsExistPeopleListSnapshot() bool {
-	f, err := os.Open(peopleListSnapshotLocation)
-	defer f.Close()
+	_, err := os.Stat(peopleListSnapshotLocation)
 
-	return os.IsExist(err)
+	return !os.IsNotExist(err)
 }
 
 func FindPeopleListFromSnapshot() (peopleList []model.Person, err error) {

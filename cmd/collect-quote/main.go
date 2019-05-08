@@ -11,10 +11,16 @@ import (
 )
 
 func filterQuoteContent(content string) string{
-	content = strings.ReplaceAll(content, "<br/>", " ")
-	content = strings.ReplaceAll(content, "<br>", " ")
-	content = strings.ReplaceAll(content, "<BR>", " ")
-	return strings.ReplaceAll(content, "<br />", " ")
+	replacer := strings.NewReplacer(
+		"<br/>", " ",
+		"<br>", " ",
+		"<BR>", " ",
+		"<br />", " ",
+		"&quot;", "'",
+		"&lt;", " ",
+		"&gt;", " ")
+
+	return replacer.Replace(content)
 }
 
 func findQuotesFromMediaWiki() {

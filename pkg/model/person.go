@@ -1,6 +1,9 @@
 package model
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"strings"
+)
 
 type Person struct {
 	Id *primitive.ObjectID `bson:"_id,omitempty"`
@@ -21,9 +24,5 @@ func (c PeopleSorts) Swap(i, j int) {
 }
 
 func (c PeopleSorts) Less(i, j int) bool {
-	if c[i].FullName == c[j].FullName {
-		return c[i].ReversedName < c[j].ReversedName
-	}
-
-	return c[i].FullName < c[j].FullName
+	return strings.ToLower(c[i].FullName) < strings.ToLower(c[j].FullName)
 }
