@@ -7,7 +7,6 @@ import (
 	"github.com/gaaon/quote-collector/pkg/service/collect"
 	"io/ioutil"
 	"log"
-	"math/rand"
 	"os"
 	"strings"
 	"time"
@@ -79,7 +78,7 @@ func findKoreanNameFromEng(peopleList []model.Person) {
 			fmt.Printf("%d개 다운 성공\n", i)
 		}
 
-		interval :=  rand.Intn(20) + 30
+		interval := 60
 		println("sleep time: ", interval, "seconds")
 		time.Sleep(time.Duration(interval) * time.Second)
 	}

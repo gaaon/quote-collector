@@ -1,6 +1,7 @@
 package collect
 
 import (
+	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"net/http"
 	"net/url"
@@ -23,6 +24,9 @@ func GetKoreanNameFromEnglish(name string) (koreanName string, err error){
 	}
 	defer res.Body.Close()
 
+	if res.StatusCode == 429 {
+		fmt.Printf("%+v\n", res.Header)
+	}
 	if doc, err = goquery.NewDocumentFromReader(res.Body); err != nil {
 		return
 	}
