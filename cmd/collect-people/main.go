@@ -44,8 +44,8 @@ func findKoreanNameMapFromSnapshot() (koreanNameMap map[string]string, err error
 }
 
 func findKoreanNameFromEng(peopleList []model.Person) {
-	f, _ := os.Create("data/korean_snapshot.txt")
-	failed, _ := os.Create("data/failed_to_find.txt")
+	f, _ := os.OpenFile("data/korean_snapshot.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+	failed, _ := os.OpenFile("data/failed_to_find.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
 
 	for i := 0; i < len(peopleList); i++ {
 		original := peopleList[i]
@@ -65,8 +65,15 @@ func findKoreanNameFromEng(peopleList []model.Person) {
 
 		if k == "" {
 			_, _ = failed.WriteString(original.FullName + "\t" + original.ReversedName + "\n")
+		} else {
+			_, err = f.WriteString(original.FullName + "\t" + original.ReversedName + "\t" + k + "\n")
+			if err != nil {
+				log.Fatal(err)
+			}
+			if err = saveLastSuccessKoreanTranslation(original.FullName); err != nil {
+				log.Fatal(err)
+			}
 		}
-		_, _ = f.WriteString(original.FullName + "\t" + original.ReversedName + "\t" + k + "\n")
 
 		if i % 100 == 0 {
 			fmt.Printf("%d개 다운 성공\n", i)
@@ -76,6 +83,40 @@ func findKoreanNameFromEng(peopleList []model.Person) {
 		println("sleep time: ", interval, "seconds")
 		time.Sleep(time.Duration(interval) * time.Second)
 	}
+}
+
+func findLastSuccessKoreanTranslation(peopleList []model.Person) int {
+	f, err := os.Open("data/lastSuccessKoreanTrans.txt")
+	if os.IsNotExist(err) {
+		return -1
+	}
+	defer f.Close()
+
+	contentRaw, err := ioutil.ReadAll(f)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	content := string(contentRaw)
+
+	if content == "" {
+		return -1
+	} else {
+		for i, person := range peopleList {
+			if person.FullName == content {
+				return i
+			}
+		}
+
+		return -1
+	}
+}
+
+func saveLastSuccessKoreanTranslation(fullName string) error {
+	return ioutil.WriteFile(
+		"data/lastSuccessKoreanTrans.txt",
+		[]byte(fullName),
+		0644)
 }
 
 func migrateKoreanSnapshotWithDefault(peopleList []model.Person, koreanNameMap map[string]string) (
@@ -126,9 +167,11 @@ func main() {
 				log.Fatal(err)
 			}
 
-			hoursToCollect := len(peopleList) * 10 / 60 / 60
+			lastIndex := findLastSuccessKoreanTranslation(peopleList)
+
+			hoursToCollect := len(peopleList) * 40 / 60 / 60
 			fmt.Printf("time for finding: %d hours\n", hoursToCollect)
-			findKoreanNameFromEng(peopleList)
+			findKoreanNameFromEng(peopleList[lastIndex+1:])
 		}
 		default:
 			log.Fatal("no such collect task")
