@@ -51,16 +51,8 @@ func findKoreanNameFromEng(peopleList []model.Person) {
 		k, err  := collect.GetKoreanNameFromEnglish(original.FullName)
 		if err != nil {
 			fmt.Println(err.Error())
+			continue
 		}
-
-		//if k == "" {
-		//	newName := original.ReversedName
-		//	k, err = collect.GetKoreanNameFromEnglish(newName)
-		//	println("[newName, newK] ", newName, k)
-		//	if err != nil {
-		//		fmt.Println(err.Error())
-		//	}
-		//}
 
 		if k == "" {
 			_, _ = failed.WriteString(original.FullName + "\t" + original.ReversedName + "\n")

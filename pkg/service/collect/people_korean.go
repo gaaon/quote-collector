@@ -1,6 +1,7 @@
 package collect
 
 import (
+	"errors"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"net/http"
@@ -25,13 +26,13 @@ func GetKoreanNameFromEnglish(name string) (koreanName string, err error){
 	defer res.Body.Close()
 
 	if res.StatusCode == 429 {
-		fmt.Printf("%+v\n", res.Header)
+		fmt.Printf("429 status header : %+v\n", res.Header)
+
+		return "", errors.New("too many request status code from server")
 	}
 	if doc, err = goquery.NewDocumentFromReader(res.Body); err != nil {
 		return
 	}
-
-	println(res.StatusCode)
 
 	doc.Find(".kno-fb-ctx.gsmt").Each(func(idx int, el *goquery.Selection) {
 		koreanName = el.Text()
