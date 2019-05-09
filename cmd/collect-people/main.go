@@ -5,6 +5,7 @@ import (
 	"github.com/gaaon/quote-collector/pkg/model"
 	"github.com/gaaon/quote-collector/pkg/repository"
 	"github.com/gaaon/quote-collector/pkg/service/collect"
+	"github.com/gaaon/quote-collector/pkg/service/notification"
 	"io/ioutil"
 	"log"
 	"os"
@@ -42,6 +43,8 @@ func findKoreanNameMapFromSnapshot() (koreanNameMap map[string]string, err error
 	return
 }
 
+var sendNoti = false
+
 func findKoreanNameFromEng(peopleList []model.Person) {
 	f, _ := os.OpenFile("data/korean_snapshot.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
 	failed, _ := os.OpenFile("data/failed_to_find.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
@@ -51,6 +54,14 @@ func findKoreanNameFromEng(peopleList []model.Person) {
 		k, err  := collect.GetKoreanNameFromEnglish(original.FullName)
 		if err != nil {
 			fmt.Println(err.Error())
+
+			if err.Error() == "too many request status code from server" && sendNoti == false {
+				if err2 := notification.SendNotiToDevice("429 comes", "quote-collector server"); err2 != nil {
+					log.Fatal(err2)
+				}
+				sendNoti = true
+			}
+
 			continue
 		}
 
