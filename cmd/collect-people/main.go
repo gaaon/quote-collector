@@ -173,6 +173,10 @@ func main() {
 
 			hoursToCollect := len(peopleList) * 40 / 60 / 60
 			fmt.Printf("time for finding: %d hours\n", hoursToCollect)
+
+			if err = notification.SendNotiToDevice("test start message", "quote-collector server"); err != nil {
+				log.Fatal(err)
+			}
 			findKoreanNameFromEng(peopleList[lastIndex+1:])
 		}
 		default:
