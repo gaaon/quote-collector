@@ -3,7 +3,7 @@ package collect
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
+	"github.com/PuerkitoBio/goquery"
 	"github.com/gaaon/quote-collector/pkg/model"
 	"io/ioutil"
 	"net/http"
@@ -80,43 +80,55 @@ func FindVidAndPersonIdInBrainy(path string) (
 	return
 }
 
-func FindQuotesInBrainy(vid string, pid string, pg int) ([]model.Quote, error) {
+func FindQuotesInBrainy(vid string, pid string, pg int) (quotes []model.Quote, err error) {
 	reqBody := NewQuotesContentReq(vid, pid, pg)
 
 	reqBodyStr, err := json.Marshal(reqBody)
 	if err != nil {
-		return nil, err
+		return
 	}
 
 	req, err := http.NewRequest(
 		"POST",
 		brainyQuoteApiUrl, bytes.NewReader(reqBodyStr))
 	if err != nil {
-		return nil, err
+		return
 	}
 	req.Header.Add("Content-Type", "application/json")
 
 	res, err := client.Do(req)
 	if err != nil {
-		return nil, err
+		return
 	}
 
 	defer res.Body.Close()
 
 	bodyRaw, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return nil, err
+		return
 	}
 
-	println(string(bodyRaw))
 	var resBody QuotesContentResponse
 	if err = json.Unmarshal(bodyRaw, &resBody); err != nil {
-		return nil, err
+		return
 	}
 
-	fmt.Printf("%+v\n", resBody)
+	docs, err := goquery.NewDocumentFromReader(strings.NewReader(resBody.Content))
+	if err != nil {
+		return
+	}
 
-	return nil, nil
+	rawQuotes := docs.Find("div.qll-bg a.b-qt").Map(func(n int, s *goquery.Selection) string {
+		return s.Text()
+	})
+
+	for _, rawQuote := range rawQuotes {
+		quotes = append(quotes, model.Quote{
+			Content: rawQuote,
+		})
+	}
+
+	return
 }
 //func FindQuotesInBrainyByLinkPath(path string) ([]model.Quote, error) {
 //	req, err := http.NewRequest("GET", brainyQuoteBaseUrl + path, nil)

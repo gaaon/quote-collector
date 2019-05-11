@@ -25,49 +25,8 @@ func filterQuoteContent(content string) string{
 	return replacer.Replace(content)
 }
 
-func findQuotesFromMediaWiki() {
-	peopleList, err := repository.FindPeopleList()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	mediaWikiXmlFile, err := os.Open("data/enwikiquote-latest-pages-articles.xml")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer mediaWikiXmlFile.Close()
-
-	mediaWiki, err := repository.GetMediaWikiFromReader(mediaWikiXmlFile)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	pageMap := repository.GetPersonNamePageMapFromMediaWiki(mediaWiki)
-
-	var quoteEntities []model.QuoteEntity
-	for _, person := range peopleList {
-		partialQuotes, err := repository.FindQuotesInPageMapByFullName(pageMap, person.FullName)
-		if err != nil {
-			log.Println(err)
-		}
-
-		quoteEntities = append(quoteEntities, repository.GetQuoteEntitiesWithPerson(partialQuotes, person)...)
-	}
-
-	if err = repository.InsertQuoteEntitiesIntoDB(quoteEntities); err != nil {
-		log.Fatal(err)
-	}
-
-	total := 0
-	for _, quoteEntity := range quoteEntities {
-		total += len(quoteEntity.Content)
-	}
-
-	println("total quotes count: ", len(quoteEntities))
-	println("total characters count: ", total)
-}
-
 func findLastSuccessQuoteTranslation(entities []model.QuoteEntity) int {
+
 	f, err := os.Open("data/lastSuccessQuoteTrans.txt")
 	if os.IsNotExist(err) {
 		return -1

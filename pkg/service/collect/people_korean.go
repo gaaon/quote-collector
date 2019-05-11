@@ -6,13 +6,20 @@ import (
 	"net/url"
 )
 
-func GetKoreanNameFromEnglish(name string) (koreanName string, err error){
-	urlStr := "https://google.co.kr/search?ie=UTF-8&q=" + url.QueryEscape(name)
+type nameTranslateService struct {}
+
+func NewNameTranslateService() *nameTranslateService {
+	return &nameTranslateService{}
+}
+
+func (service *nameTranslateService) TranslateFullNameToKorean(fullName string) (koreanName string, err error){
+	urlStr := "https://google.co.kr/search?ie=UTF-8&q=" + url.QueryEscape(fullName)
 	var (
 		req *http.Request
 		res *http.Response
 		doc *goquery.Document
 	)
+
 	if req, err = http.NewRequest("GET", urlStr, nil); err != nil {
 		return
 	}
@@ -26,8 +33,6 @@ func GetKoreanNameFromEnglish(name string) (koreanName string, err error){
 	if doc, err = goquery.NewDocumentFromReader(res.Body); err != nil {
 		return
 	}
-
-	println(res.StatusCode)
 
 	doc.Find(".kno-fb-ctx.gsmt").Each(func(idx int, el *goquery.Selection) {
 		koreanName = el.Text()

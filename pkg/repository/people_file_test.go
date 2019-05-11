@@ -2,6 +2,7 @@ package repository
 
 import (
 	"github.com/gaaon/quote-collector/pkg/model"
+	"github.com/gaaon/quote-collector/pkg/service/collect"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -38,7 +39,7 @@ func TestSaveIntoWriter(t *testing.T) {
 		Link: "/wiki/John_von_Neumann",
 	})
 
-	err := savePeopleListIntoWriter(testWriter, peopleList)
+	err := collect.savePeopleListIntoWriter(testWriter, peopleList)
 	assertT.NoError(err)
 
 	assertT.Equal(

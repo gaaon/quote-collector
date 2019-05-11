@@ -42,40 +42,6 @@ func findKoreanNameMapFromSnapshot() (koreanNameMap map[string]string, err error
 	return
 }
 
-func findKoreanNameFromEng(peopleList []model.Person) {
-	f, _ := os.Create("data/korean_snapshot.txt")
-	failed, _ := os.Create("data/failed_to_find.txt")
-
-	for i := 0; i < len(peopleList); i++ {
-		original := peopleList[i]
-		k, err  := collect.GetKoreanNameFromEnglish(original.FullName)
-		if err != nil {
-			fmt.Println(err.Error())
-		}
-
-		//if k == "" {
-		//	newName := original.ReversedName
-		//	k, err = collect.GetKoreanNameFromEnglish(newName)
-		//	println("[newName, newK] ", newName, k)
-		//	if err != nil {
-		//		fmt.Println(err.Error())
-		//	}
-		//}
-
-		if k == "" {
-			_, _ = failed.WriteString(original.FullName + "\t" + original.ReversedName + "\n")
-		}
-		_, _ = f.WriteString(original.FullName + "\t" + original.ReversedName + "\t" + k + "\n")
-
-		if i % 100 == 0 {
-			fmt.Printf("%d개 다운 성공\n", i)
-		}
-
-
-		time.Sleep(30 * time.Second)
-	}
-}
-
 func migrateKoreanSnapshotWithDefault(peopleList []model.Person, koreanNameMap map[string]string) (
 	migratedPersonList []model.Person, err error) {
 
@@ -107,11 +73,18 @@ func main() {
 		task = "find"
 	}
 
+	peopleSnapshotService := collect.NewPeopleSnapshotService()
+	nameTranslateService := collect.NewNameTranslateService()
+	brainyQuoteService, err := collect.NewBrainyQuoteService(peopleSnapshotService)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	switch env {
 	case "file": {
 		switch task {
 		case "find": {
-			peopleList, err := collect.FindPeopleListInBrainyFromSnapshot()
+			peopleList, err := brainyQuoteService.FindPeopleListFromSnapshot()
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -119,14 +92,35 @@ func main() {
 			println("Find people count ", len(peopleList))
 		}
 		case "korean": {
-			peopleList, err := collect.FindPeopleListInBrainyFromSnapshot()
+			peopleList, err := brainyQuoteService.FindPeopleListFromSnapshot()
 			if err != nil {
 				log.Fatal(err)
 			}
 
-			hoursToCollect := len(peopleList) * 10 / 60 / 60
+			hoursToCollect := len(peopleList) * 60 / 60 / 60
 			fmt.Printf("time for finding: %d hours\n", hoursToCollect)
-			findKoreanNameFromEng(peopleList)
+
+			f, _ := os.Create("data/korean_snapshot.txt")
+			failed, _ := os.Create("data/failed_to_find.txt")
+
+			for i := len(peopleList) - 1; i >= 0; i-- {
+				original := peopleList[i]
+				k, err  := nameTranslateService.TranslateFullNameToKorean(original.FullName)
+				if err != nil {
+					fmt.Println(err.Error())
+				}
+
+				if k == "" {
+					_, _ = failed.WriteString(original.FullName + "\t" + original.ReversedName + "\n")
+				}
+				_, _ = f.WriteString(original.FullName + "\t" + original.ReversedName + "\t" + k + "\n")
+
+				if i % 100 == 0 {
+					fmt.Printf("%d개 다운 성공\n", i)
+				}
+
+				time.Sleep(60 * time.Second)
+			}
 		}
 		default:
 			log.Fatal("no such collect task")
@@ -137,7 +131,7 @@ func main() {
 	case "db": {
 		switch task {
 		case "migrate": {
-			peopleList, err := collect.FindPeopleListFromSnapshot()
+			peopleList, err := peopleSnapshotService.FindPeopleList()
 			if err != nil {
 				log.Fatal(err)
 			}

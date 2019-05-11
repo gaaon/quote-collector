@@ -11,6 +11,7 @@ type Person struct {
 	ReversedName string `bson:"-"`
 	Link string `bson:"link,omitempty"`
 	KoreanName string `bson:"koreanName,omitempty"`
+	Source string `bson:"source,omitempty"`
 }
 
 type PeopleSorts []Person
