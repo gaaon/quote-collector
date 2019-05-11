@@ -16,19 +16,20 @@ var token string
 func init() {
 	client = &http.Client{}
 
-	var exists bool
-	userKey, exists = os.LookupEnv("PUSHOVER_USER_KEY")
-	if !exists {
-		log.Fatal("no pushover user key")
-	}
+	userKey = os.Getenv("PUSHOVER_USER_KEY")
 
-	token, exists = os.LookupEnv("PUSHOVER_TOKEN")
-	if !exists {
-		log.Fatal("no pushover token")
-	}
+	token = os.Getenv("PUSHOVER_TOKEN")
 }
 
 func SendNotiToDevice(message string, title string) error {
+	if userKey == "" {
+		log.Fatal("user key cannot be empty")
+	}
+
+	if token == "" {
+		log.Fatal("token cannot be empty")
+	}
+
 	values := url.Values{}
 	values.Add("token", token)
 	values.Add("user", userKey)

@@ -66,15 +66,7 @@ func FindPeopleListFromAToZ() (peopleList []model.Person, err error) {
 
 	sort.Sort(model.PeopleSorts(peopleList))
 
-	index := 0
-	for i, person := range peopleList {
-		if person.FullName[0] < 'A' || person.FullName[0] > 'Z' {
-			index = i
-			break
-		}
-	}
-
-	return peopleList[0:index], nil
+	return peopleList, nil
 }
 
 /**

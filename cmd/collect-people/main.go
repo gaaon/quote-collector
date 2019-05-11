@@ -188,26 +188,13 @@ func main() {
 	case "db": {
 		switch task {
 		case "migrate": {
-			peopleList, err := collect.FindPeopleListFromSnapshot()
+			peopleList, err := collect.FindPeopleListInBrainyFromSnapshot()
 			if err != nil {
 				log.Fatal(err)
 			}
 
-			koreanNameMap, err := findKoreanNameMapFromSnapshot()
-			if err != nil {
+			if err = repository.InsertPeopleListIntoDB(peopleList); err != nil {
 				log.Fatal(err)
-			}
-
-			migratedPeopleList, err := migrateKoreanSnapshotWithDefault(peopleList, koreanNameMap)
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			for _, person := range migratedPeopleList {
-				_, err := repository.InsertPerson(person.FullName, person.KoreanName, person.Link)
-				if err != nil {
-					log.Fatal(nil)
-				}
 			}
 		}
 		case "find": {

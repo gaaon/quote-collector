@@ -3,8 +3,9 @@ package collect
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
+	"github.com/PuerkitoBio/goquery"
 	"github.com/gaaon/quote-collector/pkg/model"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -80,7 +81,26 @@ func FindVidAndPersonIdInBrainy(path string) (
 	return
 }
 
-func FindQuotesInBrainy(vid string, pid string, pg int) ([]model.Quote, error) {
+func FindQuotesInBrainyFromReader(reader io.Reader) (quotes []model.Quote, err error) {
+	docs, err := goquery.NewDocumentFromReader(reader)
+	if err != nil {
+		return
+	}
+
+	quoteContents := docs.Find("div.qll-bg a.b-qt").Map(func(n int, s *goquery.Selection) string {
+		return s.Text()
+	})
+
+	for _, content := range quoteContents {
+		quotes = append(quotes, model.Quote{
+			Content: content,
+		})
+	}
+
+	return
+}
+
+func FindQuotesInBrainyWithPagination(vid string, pid string, pg int) ([]model.Quote, error) {
 	reqBody := NewQuotesContentReq(vid, pid, pg)
 
 	reqBodyStr, err := json.Marshal(reqBody)
@@ -108,33 +128,35 @@ func FindQuotesInBrainy(vid string, pid string, pg int) ([]model.Quote, error) {
 		return nil, err
 	}
 
-	println(string(bodyRaw))
 	var resBody QuotesContentResponse
 	if err = json.Unmarshal(bodyRaw, &resBody); err != nil {
 		return nil, err
 	}
 
-	fmt.Printf("%+v\n", resBody)
-
-	return nil, nil
+	return FindQuotesInBrainyFromReader(strings.NewReader(resBody.Content))
 }
-//func FindQuotesInBrainyByLinkPath(path string) ([]model.Quote, error) {
-//	req, err := http.NewRequest("GET", brainyQuoteBaseUrl + path, nil)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	res, err := client.Do(req)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	defer res.Body.Close()
-//
-//	docs, err := goquery.NewDocumentFromReader(res.Body)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//
-//}
+
+func FindQuotesInBrainyByPath(path string) (quotes []model.Quote, lastPagi int, err error) {
+	vid, pid, err := FindVidAndPersonIdInBrainy(path)
+	if err != nil {
+		return
+	}
+
+	var i int
+	for i = 1; i < 100; i++ {
+		var partialQuotes []model.Quote
+		if partialQuotes, err = FindQuotesInBrainyWithPagination(vid, pid, i); err != nil {
+			return
+		}
+
+		if len(partialQuotes) == 0 {
+			break
+		}
+
+		quotes = append(quotes, partialQuotes...)
+	}
+
+	lastPagi = i - 1
+
+	return
+}

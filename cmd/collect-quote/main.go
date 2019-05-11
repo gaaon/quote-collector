@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/gaaon/quote-collector/pkg/model"
 	"github.com/gaaon/quote-collector/pkg/repository"
+	"github.com/gaaon/quote-collector/pkg/service/collect"
 	"github.com/gaaon/quote-collector/pkg/service/translate"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"io/ioutil"
@@ -67,6 +68,37 @@ func findQuotesFromMediaWiki() {
 	println("total characters count: ", total)
 }
 
+func findQuotesFromBrainy() {
+	peopleList, err := repository.FindPeopleList()
+	if err != nil {
+		log.Fatal(nil)
+	}
+
+	lastSuccessIdx := findLastSuccessQuoteCollect(peopleList)
+
+	for i, person := range peopleList {
+		if i <= lastSuccessIdx {
+			continue
+		}
+
+		partialQuotes, _, err := collect.FindQuotesInBrainyByPath(person.Link)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		quoteEntities := repository.GetQuoteEntitiesWithPerson(partialQuotes, person)
+		if err = repository.InsertQuoteEntitiesIntoDB(quoteEntities); err != nil {
+			log.Fatal(err)
+		}
+
+		if err = saveLastSuccessQuoteCollect(person.FullName); err != nil {
+			log.Fatal(err)
+		}
+
+		time.Sleep(10 * time.Second)
+	}
+}
+
 func findLastSuccessQuoteTranslation(entities []model.QuoteEntity) int {
 	f, err := os.Open("data/lastSuccessQuoteTrans.txt")
 	if os.IsNotExist(err) {
@@ -101,6 +133,40 @@ func saveLastSuccessQuoteTranslation(id *primitive.ObjectID) error {
 		0644)
 }
 
+func findLastSuccessQuoteCollect(peopleList []model.Person) int {
+	f, err := os.Open("data/lastSuccessQuoteCollect.txt")
+	if os.IsNotExist(err) {
+		return -1
+	}
+	defer f.Close()
+
+	contentRaw, err := ioutil.ReadAll(f)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	content := string(contentRaw)
+
+	if content == "" {
+		return -1
+	} else {
+		for i, person := range peopleList {
+			if person.FullName == content {
+				return i
+			}
+		}
+
+		return -1
+	}
+}
+
+func saveLastSuccessQuoteCollect(fullName string) error {
+	return ioutil.WriteFile(
+		"data/lastSuccessQuoteCollect.txt",
+		[]byte(fullName),
+		0644)
+}
+
 func main() {
 	task, exists := os.LookupEnv("COLLECT_TASK")
 	if !exists {
@@ -110,6 +176,7 @@ func main() {
 	switch task {
 	case "find": {
 		//findQuotesFromMediaWiki()
+		findQuotesFromBrainy()
 	}
 	case "translate": {
 		quoteEntities, err := repository.FindQuoteEntitiesFromDB()

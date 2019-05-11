@@ -26,6 +26,27 @@ func TestFindQuotesInBrainy(t *testing.T) {
 	vid, pid, err := FindVidAndPersonIdInBrainy(path)
 	assertT.NoError(err)
 
-	_, err = FindQuotesInBrainy(vid, pid, 1)
+	quotes, err := FindQuotesInBrainyWithPagination(vid, pid, 1)
 	assertT.NoError(err)
+
+	assertT.True(len(quotes) > 0)
+}
+
+func TestFindQuotesInBrainyByPath(t *testing.T) {
+	assertT := assert.New(t)
+
+	path := "/authors/a_a_milne"
+	quotes, lastPagi, err := FindQuotesInBrainyByPath(path)
+	assertT.NoError(err)
+
+	assertT.True(lastPagi > 1)
+	assertT.NotNil(quotes)
+
+	path = "/authors/albert_einstein"
+	quotes, lastPagi, err = FindQuotesInBrainyByPath(path)
+	assertT.NoError(err)
+
+	assertT.True(lastPagi > 5)
+	assertT.NotNil(quotes)
+	assertT.True(len(quotes) > 100)
 }
