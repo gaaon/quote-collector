@@ -96,6 +96,8 @@ func findQuotesFromBrainy() error {
 			return err
 		}
 
+		println("find %d quotes from %s\n", len(partialQuotes), person.FullName)
+
 		time.Sleep(10 * time.Second)
 	}
 
