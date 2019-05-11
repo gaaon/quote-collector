@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/gaaon/quote-collector/pkg/model"
 	"github.com/gaaon/quote-collector/pkg/repository"
 	"github.com/gaaon/quote-collector/pkg/service/collect"
@@ -96,7 +97,7 @@ func findQuotesFromBrainy() error {
 			return err
 		}
 
-		println("find %d quotes from %s\n", len(partialQuotes), person.FullName)
+		fmt.Printf("find %d quotes from %s\n", len(partialQuotes), person.FullName)
 
 		time.Sleep(10 * time.Second)
 	}
