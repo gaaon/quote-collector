@@ -1,18 +1,20 @@
 package collect
 
 import (
+	"errors"
+	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"net/http"
 	"net/url"
 )
 
-type nameTranslateService struct {}
+type NameTranslateService struct {}
 
-func NewNameTranslateService() *nameTranslateService {
-	return &nameTranslateService{}
+func NewNameTranslateService() *NameTranslateService {
+	return &NameTranslateService{}
 }
 
-func (service *nameTranslateService) TranslateFullNameToKorean(fullName string) (koreanName string, err error){
+func (service *NameTranslateService) TranslateFullNameToKorean(fullName string) (koreanName string, err error){
 	urlStr := "https://google.co.kr/search?ie=UTF-8&q=" + url.QueryEscape(fullName)
 	var (
 		req *http.Request
@@ -30,6 +32,11 @@ func (service *nameTranslateService) TranslateFullNameToKorean(fullName string) 
 	}
 	defer res.Body.Close()
 
+	if res.StatusCode == 429 {
+		fmt.Printf("429 status header : %+v\n", res.Header)
+
+		return "", errors.New("too many request status code from server")
+	}
 	if doc, err = goquery.NewDocumentFromReader(res.Body); err != nil {
 		return
 	}

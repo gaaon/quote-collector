@@ -16,6 +16,18 @@ func InsertPerson(fullName string, koreanName string, link string) (interface{},
 	return res.InsertedID, nil
 }
 
+func InsertPeopleListIntoDB(peopleList []model.Person) error {
+	data := make([]interface{}, 0)
+
+	for _, person := range peopleList {
+		data = append(data, person)
+	}
+
+	_, err := peopleCollection.InsertMany(ctx, data)
+
+	return err
+}
+
 func dropPeopleCollection() error {
 	err := peopleCollection.Drop(ctx)
 	return err

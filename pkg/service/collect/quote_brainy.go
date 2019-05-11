@@ -3,8 +3,10 @@ package collect
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gaaon/quote-collector/pkg/model"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -80,73 +82,86 @@ func FindVidAndPersonIdInBrainy(path string) (
 	return
 }
 
-func FindQuotesInBrainy(vid string, pid string, pg int) (quotes []model.Quote, err error) {
+func FindQuotesInBrainyFromReader(reader io.Reader) (quotes []model.Quote, err error) {
+	docs, err := goquery.NewDocumentFromReader(reader)
+	if err != nil {
+		return
+	}
+
+	quoteContents := docs.Find("div.qll-bg a.b-qt").Map(func(n int, s *goquery.Selection) string {
+		return s.Text()
+	})
+
+	for _, content := range quoteContents {
+		quotes = append(quotes, model.Quote{
+			Content: content,
+		})
+	}
+
+	return
+}
+
+func FindQuotesInBrainyWithPagination(vid string, pid string, pg int) ([]model.Quote, error) {
 	reqBody := NewQuotesContentReq(vid, pid, pg)
 
 	reqBodyStr, err := json.Marshal(reqBody)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	req, err := http.NewRequest(
 		"POST",
 		brainyQuoteApiUrl, bytes.NewReader(reqBodyStr))
 	if err != nil {
-		return
+		return nil, err
 	}
 	req.Header.Add("Content-Type", "application/json")
 
 	res, err := client.Do(req)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	defer res.Body.Close()
 
+	if res.StatusCode != 200 {
+		return nil, errors.New("status code is not ok")
+	}
+
 	bodyRaw, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	var resBody QuotesContentResponse
 	if err = json.Unmarshal(bodyRaw, &resBody); err != nil {
-		return
+		return nil, err
 	}
 
-	docs, err := goquery.NewDocumentFromReader(strings.NewReader(resBody.Content))
+	return FindQuotesInBrainyFromReader(strings.NewReader(resBody.Content))
+}
+
+func FindQuotesInBrainyByPath(path string) (quotes []model.Quote, lastPagi int, err error) {
+	vid, pid, err := FindVidAndPersonIdInBrainy(path)
 	if err != nil {
 		return
 	}
 
-	rawQuotes := docs.Find("div.qll-bg a.b-qt").Map(func(n int, s *goquery.Selection) string {
-		return s.Text()
-	})
+	var i int
+	for i = 1; i < 100; i++ {
+		var partialQuotes []model.Quote
+		if partialQuotes, err = FindQuotesInBrainyWithPagination(vid, pid, i); err != nil {
+			return
+		}
 
-	for _, rawQuote := range rawQuotes {
-		quotes = append(quotes, model.Quote{
-			Content: rawQuote,
-		})
+		if len(partialQuotes) == 0 {
+			break
+		}
+
+		quotes = append(quotes, partialQuotes...)
 	}
+
+	lastPagi = i - 1
 
 	return
 }
-//func FindQuotesInBrainyByLinkPath(path string) ([]model.Quote, error) {
-//	req, err := http.NewRequest("GET", brainyQuoteBaseUrl + path, nil)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	res, err := client.Do(req)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	defer res.Body.Close()
-//
-//	docs, err := goquery.NewDocumentFromReader(res.Body)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//
-//}

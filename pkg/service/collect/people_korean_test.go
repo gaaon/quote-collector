@@ -8,7 +8,7 @@ import (
 
 type NameTranslateServiceTestSuite struct {
 	suite.Suite
-	service *nameTranslateService
+	service *NameTranslateService
 }
 
 func (suite *NameTranslateServiceTestSuite) SetupTest() {
