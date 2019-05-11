@@ -4,6 +4,7 @@ import (
 	"github.com/gaaon/quote-collector/pkg/model"
 	"github.com/gaaon/quote-collector/pkg/repository"
 	"github.com/gaaon/quote-collector/pkg/service/collect"
+	"github.com/gaaon/quote-collector/pkg/service/notification"
 	"github.com/gaaon/quote-collector/pkg/service/translate"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"io/ioutil"
@@ -68,10 +69,10 @@ func findQuotesFromMediaWiki() {
 	println("total characters count: ", total)
 }
 
-func findQuotesFromBrainy() {
+func findQuotesFromBrainy() error {
 	peopleList, err := repository.FindPeopleList()
 	if err != nil {
-		log.Fatal(nil)
+		return err
 	}
 
 	lastSuccessIdx := findLastSuccessQuoteCollect(peopleList)
@@ -83,20 +84,22 @@ func findQuotesFromBrainy() {
 
 		partialQuotes, _, err := collect.FindQuotesInBrainyByPath(person.Link)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 
 		quoteEntities := repository.GetQuoteEntitiesWithPerson(partialQuotes, person)
 		if err = repository.InsertQuoteEntitiesIntoDB(quoteEntities); err != nil {
-			log.Fatal(err)
+			return err
 		}
 
 		if err = saveLastSuccessQuoteCollect(person.FullName); err != nil {
-			log.Fatal(err)
+			return err
 		}
 
 		time.Sleep(10 * time.Second)
 	}
+
+	return nil
 }
 
 func findLastSuccessQuoteTranslation(entities []model.QuoteEntity) int {
@@ -176,7 +179,10 @@ func main() {
 	switch task {
 	case "find": {
 		//findQuotesFromMediaWiki()
-		findQuotesFromBrainy()
+		if err := findQuotesFromBrainy(); err != nil {
+			_ = notification.SendNotiToDevice("collect quote has problem", "quote-collector server")
+			log.Fatal(err)
+		}
 	}
 	case "translate": {
 		quoteEntities, err := repository.FindQuoteEntitiesFromDB()

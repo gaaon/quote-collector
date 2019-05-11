@@ -3,6 +3,7 @@ package collect
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gaaon/quote-collector/pkg/model"
 	"io"
@@ -122,6 +123,10 @@ func FindQuotesInBrainyWithPagination(vid string, pid string, pg int) ([]model.Q
 	}
 
 	defer res.Body.Close()
+
+	if res.StatusCode != 200 {
+		return nil, errors.New("status code is not ok")
+	}
 
 	bodyRaw, err := ioutil.ReadAll(res.Body)
 	if err != nil {
