@@ -2,15 +2,30 @@ package collect
 
 import (
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 	"strconv"
 	"testing"
 )
 
-func TestFindVidAndPersonIdInBrainyByLinkPath(t *testing.T) {
-	assertT := assert.New(t)
+type QuoteBrainyServiceTestSuite struct {
+	suite.Suite
+	service *quoteBrainyService
+}
+
+func (suite *QuoteBrainyServiceTestSuite) SetupTest() {
+	suite.service = NewQuoteBrainyService()
+}
+
+func TestQuoteBrainyServiceTestSuite(t *testing.T) {
+	suite.Run(t, new(QuoteBrainyServiceTestSuite))
+}
+
+
+func (suite *QuoteBrainyServiceTestSuite) TestFindVidAndPersonIdByLink() {
+	assertT := assert.New(suite.T())
 
 	path := "/authors/a_a_milne"
-	vid, pid, err := FindVidAndPersonIdInBrainy(path)
+	vid, pid, err := suite.service.findVidAndPersonId(path)
 	assertT.NoError(err)
 	assertT.NotEmpty(vid)
 	assertT.NotEmpty(pid)
@@ -19,31 +34,31 @@ func TestFindVidAndPersonIdInBrainyByLinkPath(t *testing.T) {
 	assertT.NoError(err)
 }
 
-func TestFindQuotesInBrainy(t *testing.T) {
-	assertT := assert.New(t)
+func (suite *QuoteBrainyServiceTestSuite) TestFindQuotesInBrainyByLink() {
+	assertT := assert.New(suite.T())
 
-	path := "/authors/a_a_milne"
-	vid, pid, err := FindVidAndPersonIdInBrainy(path)
+	link := "/authors/a_a_milne"
+	vid, pid, err := suite.service.findVidAndPersonId(link)
 	assertT.NoError(err)
 
-	quotes, err := FindQuotesInBrainyWithPagination(vid, pid, 1)
+	quotes, err := suite.service.findQuotesWithPagination(vid, pid, 1)
 	assertT.NoError(err)
 
 	assertT.True(len(quotes) > 0)
 }
 
-func TestFindQuotesInBrainyByPath(t *testing.T) {
-	assertT := assert.New(t)
+func (suite *QuoteBrainyServiceTestSuite) TestFindSequentialQuotesByLink() {
+	assertT := assert.New(suite.T())
 
-	path := "/authors/a_a_milne"
-	quotes, lastPagi, err := FindQuotesInBrainyByPath(path)
+	link := "/authors/a_a_milne"
+	quotes, lastPagi, err := suite.service.FindAllQuotesByLink(link)
 	assertT.NoError(err)
 
 	assertT.True(lastPagi > 1)
 	assertT.NotNil(quotes)
 
-	path = "/authors/albert_einstein"
-	quotes, lastPagi, err = FindQuotesInBrainyByPath(path)
+	link = "/authors/albert_einstein"
+	quotes, lastPagi, err = suite.service.FindAllQuotesByLink(link)
 	assertT.NoError(err)
 
 	assertT.True(lastPagi > 5)

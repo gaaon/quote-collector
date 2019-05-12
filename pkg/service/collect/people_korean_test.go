@@ -3,6 +3,7 @@ package collect
 import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"net/http"
 	"testing"
 )
 
@@ -12,7 +13,7 @@ type NameTranslateServiceTestSuite struct {
 }
 
 func (suite *NameTranslateServiceTestSuite) SetupTest() {
-	suite.service = NewNameTranslateService()
+	suite.service = NewNameTranslateService(&http.Client{})
 }
 
 func TestNameTranslateServiceTestSuite(t *testing.T) {

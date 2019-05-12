@@ -8,7 +8,7 @@ import (
 
 type BrainyQuoteServiceTestSuite struct {
 	suite.Suite
-	service *brainyQuoteService
+	service *peopleBrainyService
 }
 
 func (suite *BrainyQuoteServiceTestSuite) SetupTest() {

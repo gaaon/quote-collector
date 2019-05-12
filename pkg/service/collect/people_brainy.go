@@ -15,18 +15,18 @@ import (
 	"sync"
 )
 
-type brainyQuoteService struct {
+type peopleBrainyService struct {
 	authorBaseUrl string
 	httpClient *http.Client
 	peopleSnapshotService *peopleSnapshotService
 }
 
-func NewBrainyQuoteService(peopleSnapshotService *peopleSnapshotService) (*brainyQuoteService, error) {
+func NewBrainyQuoteService(peopleSnapshotService *peopleSnapshotService) (*peopleBrainyService, error) {
 	if peopleSnapshotService == nil {
 		return nil, errors.New("peopleSnapshotService cannot be nil")
 	}
 
-	return &brainyQuoteService{
+	return &peopleBrainyService{
 		authorBaseUrl: "https://www.brainyquote.com/authors/",
 		httpClient: &http.Client{
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -37,7 +37,7 @@ func NewBrainyQuoteService(peopleSnapshotService *peopleSnapshotService) (*brain
 	}, nil
 }
 
-func (service *brainyQuoteService) findPeopleListByBody(bodyReader io.Reader) (
+func (service *peopleBrainyService) findPeopleListByBody(bodyReader io.Reader) (
 	peopleList []model.Person, err error) {
 
 	var doc *goquery.Document
@@ -64,7 +64,7 @@ func (service *brainyQuoteService) findPeopleListByBody(bodyReader io.Reader) (
 	return
 }
 
-func (service *brainyQuoteService) findPeopleListStartsWith(
+func (service *peopleBrainyService) findPeopleListStartsWith(
 	nameFirstChar string, pagination int) (peopleList []model.Person, err error) {
 
 		brainyPeopleListUrl := service.authorBaseUrl + nameFirstChar
@@ -94,7 +94,7 @@ func (service *brainyQuoteService) findPeopleListStartsWith(
 		return service.findPeopleListByBody(res.Body)
 }
 
-func (service *brainyQuoteService) FindPeopleListFromSnapshot() (peopleList []model.Person, err error){
+func (service *peopleBrainyService) FindPeopleListFromSnapshot() (peopleList []model.Person, err error){
 
 	peopleSnapshotService := service.peopleSnapshotService
 

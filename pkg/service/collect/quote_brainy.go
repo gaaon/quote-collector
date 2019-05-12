@@ -12,8 +12,19 @@ import (
 	"strings"
 )
 
-const brainyQuoteBaseUrl = "https://www.brainyquote.com/"
-const brainyQuoteApiUrl = "https://www.brainyquote.com/api/inf"
+type quoteBrainyService struct {
+	httpClient *http.Client
+	baseUrl string
+	apiUrl string
+}
+
+func NewQuoteBrainyService() *quoteBrainyService {
+	return &quoteBrainyService{
+		httpClient: &http.Client{},
+		baseUrl: "https://www.brainyquote.com/",
+		apiUrl: "https://www.brainyquote.com/api/inf",
+	}
+}
 
 type QuotesContentResponse struct {
 	Content string `json:"content"`
@@ -46,15 +57,15 @@ func NewQuotesContentReq(vid string, pid string, pg int) *QuotesContentRequest {
 	}
 }
 
-func FindVidAndPersonIdInBrainy(path string) (
+func (service *quoteBrainyService) findVidAndPersonId(link string) (
 	vid string, pid string, err error) {
 
-	req, err := http.NewRequest("GET", brainyQuoteBaseUrl + path, nil)
+	req, err := http.NewRequest("GET", service.baseUrl +link, nil)
 	if err != nil {
 		return
 	}
 
-	res, err := client.Do(req)
+	res, err := service.httpClient.Do(req)
 	if err != nil {
 		return
 	}
@@ -73,6 +84,7 @@ func FindVidAndPersonIdInBrainy(path string) (
 			vidWrapper := strings.Split(line, "=")[1]
 			vidWrapper = strings.TrimRight(vidWrapper, ";")
 			vid = strings.Trim(vidWrapper, "'")
+
 		} else if strings.Contains(line, "ctTarg[\"bq_aId\"]") {
 			pidWrapper := strings.TrimSpace(strings.Split(line, "=")[1])
 			pidWrapper = strings.TrimRight(pidWrapper, ";")
@@ -82,7 +94,7 @@ func FindVidAndPersonIdInBrainy(path string) (
 	return
 }
 
-func FindQuotesInBrainyFromReader(reader io.Reader) (quotes []model.Quote, err error) {
+func (service *quoteBrainyService) readQuotesFromReader(reader io.Reader) (quotes []model.Quote, err error) {
 	docs, err := goquery.NewDocumentFromReader(reader)
 	if err != nil {
 		return
@@ -101,7 +113,7 @@ func FindQuotesInBrainyFromReader(reader io.Reader) (quotes []model.Quote, err e
 	return
 }
 
-func FindQuotesInBrainyWithPagination(vid string, pid string, pg int) ([]model.Quote, error) {
+func (service *quoteBrainyService) findQuotesWithPagination(vid string, pid string, pg int) ([]model.Quote, error) {
 	reqBody := NewQuotesContentReq(vid, pid, pg)
 
 	reqBodyStr, err := json.Marshal(reqBody)
@@ -111,13 +123,13 @@ func FindQuotesInBrainyWithPagination(vid string, pid string, pg int) ([]model.Q
 
 	req, err := http.NewRequest(
 		"POST",
-		brainyQuoteApiUrl, bytes.NewReader(reqBodyStr))
+		service.apiUrl, bytes.NewReader(reqBodyStr))
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Add("Content-Type", "application/json")
 
-	res, err := client.Do(req)
+	res, err := service.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -138,11 +150,11 @@ func FindQuotesInBrainyWithPagination(vid string, pid string, pg int) ([]model.Q
 		return nil, err
 	}
 
-	return FindQuotesInBrainyFromReader(strings.NewReader(resBody.Content))
+	return service.readQuotesFromReader(strings.NewReader(resBody.Content))
 }
 
-func FindQuotesInBrainyByPath(path string) (quotes []model.Quote, lastPagi int, err error) {
-	vid, pid, err := FindVidAndPersonIdInBrainy(path)
+func (service *quoteBrainyService) FindAllQuotesByLink(link string) (quotes []model.Quote, lastPagi int, err error) {
+	vid, pid, err := service.findVidAndPersonId(link)
 	if err != nil {
 		return
 	}
@@ -150,7 +162,7 @@ func FindQuotesInBrainyByPath(path string) (quotes []model.Quote, lastPagi int, 
 	var i int
 	for i = 1; i < 100; i++ {
 		var partialQuotes []model.Quote
-		if partialQuotes, err = FindQuotesInBrainyWithPagination(vid, pid, i); err != nil {
+		if partialQuotes, err = service.findQuotesWithPagination(vid, pid, i); err != nil {
 			return
 		}
 

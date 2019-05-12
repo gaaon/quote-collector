@@ -8,10 +8,14 @@ import (
 	"net/url"
 )
 
-type NameTranslateService struct {}
+type NameTranslateService struct {
+	httpClient *http.Client
+}
 
-func NewNameTranslateService() *NameTranslateService {
-	return &NameTranslateService{}
+func NewNameTranslateService(httpClient *http.Client) *NameTranslateService {
+	return &NameTranslateService{
+		httpClient: httpClient,
+	}
 }
 
 func (service *NameTranslateService) TranslateFullNameToKorean(fullName string) (koreanName string, err error){
@@ -27,7 +31,7 @@ func (service *NameTranslateService) TranslateFullNameToKorean(fullName string) 
 	}
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36 Edge/17.17134")
 
-	if res, err = client.Do(req); err != nil {
+	if res, err = service.httpClient.Do(req); err != nil {
 		return
 	}
 	defer res.Body.Close()

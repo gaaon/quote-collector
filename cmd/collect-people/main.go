@@ -8,6 +8,7 @@ import (
 	"github.com/gaaon/quote-collector/pkg/service/notification"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -152,8 +153,9 @@ func main() {
 		task = "find"
 	}
 
+	client := &http.Client{}
 	peopleSnapshotService := collect.NewPeopleSnapshotService()
-	nameTranslateService := collect.NewNameTranslateService()
+	nameTranslateService := collect.NewNameTranslateService(client)
 	brainyQuoteService, err := collect.NewBrainyQuoteService(peopleSnapshotService)
 	if err != nil {
 		log.Fatal(err)
