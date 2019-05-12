@@ -33,7 +33,7 @@ func (suite *DBTestSuite) TestFindPeopleList() {
 	_, err := InsertPerson("Zhuge Liang", "제갈량", "")
 	assertT.NoError(err)
 
-	peopleList ,err := FindPeopleList()
+	peopleList, err := FindPeopleList()
 	assertT.NoError(err)
 
 	assertT.Len(peopleList, 1)

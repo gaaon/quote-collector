@@ -2,39 +2,45 @@ package notification
 
 import (
 	"errors"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
 )
 
-var client *http.Client
-var userKey string
-var token string
-
-func init() {
-	client = &http.Client{}
-
-	userKey = os.Getenv("PUSHOVER_USER_KEY")
-
-	token = os.Getenv("PUSHOVER_TOKEN")
+type PushoverService struct {
+	client  *http.Client
+	userKey string
+	token   string
 }
 
-func SendNotiToDevice(message string, title string) error {
-	if userKey == "" {
-		log.Fatal("user key cannot be empty")
+func NewPushoverService(httpClient *http.Client) (*PushoverService, error) {
+	var (
+		userKey string
+		token   string
+	)
+
+	if userKey = os.Getenv("PUSHOVER_USER_KEY"); userKey == "" {
+		return nil, errors.New("pushover user key cannot be empty")
 	}
 
-	if token == "" {
-		log.Fatal("token cannot be empty")
+	if token = os.Getenv("PUSHOVER_TOKEN"); token == "" {
+		return nil, errors.New("pushover token cannot be empty")
 	}
 
+	return &PushoverService{
+		httpClient,
+		userKey,
+		token,
+	}, nil
+}
+
+func (service *PushoverService) SendNotiToDevice(message string) error {
 	values := url.Values{}
-	values.Add("token", token)
-	values.Add("user", userKey)
+	values.Add("token", service.token)
+	values.Add("user", service.userKey)
 	values.Add("message", message)
-	values.Add("title", title)
+	values.Add("title", "quote-collector")
 
 	req, err := http.NewRequest(
 		"POST",
@@ -45,7 +51,7 @@ func SendNotiToDevice(message string, title string) error {
 		return err
 	}
 
-	res, err := client.Do(req)
+	res, err := service.client.Do(req)
 	if err != nil {
 		return err
 	}

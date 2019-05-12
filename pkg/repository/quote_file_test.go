@@ -29,9 +29,9 @@ func TestGetPageMapByFullName(t *testing.T) {
 	assertT := assert.New(t)
 
 	person := model.Person{
-		FullName: "Albert Einstein",
+		FullName:     "Albert Einstein",
 		ReversedName: "Einstein, Albert",
-		Link: "/wiki/Albert_Einstein",
+		Link:         "/wiki/Albert_Einstein",
 	}
 
 	testArticlesXml, err := os.Open(testArticlesXmlName)
@@ -53,9 +53,9 @@ func TestGetQuotesByFullName(t *testing.T) {
 	assertT := assert.New(t)
 
 	person := model.Person{
-		FullName: "Albert Einstein",
+		FullName:     "Albert Einstein",
 		ReversedName: "Einstein, Albert",
-		Link: "/wiki/Albert_Einstein",
+		Link:         "/wiki/Albert_Einstein",
 	}
 
 	testArticlesXml, err := os.Open(testArticlesXmlName)

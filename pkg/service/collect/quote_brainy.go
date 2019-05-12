@@ -12,55 +12,55 @@ import (
 	"strings"
 )
 
-type quoteBrainyService struct {
+type QuoteBrainyService struct {
 	httpClient *http.Client
-	baseUrl string
-	apiUrl string
+	baseUrl    string
+	apiUrl     string
 }
 
-func NewQuoteBrainyService() *quoteBrainyService {
-	return &quoteBrainyService{
-		httpClient: &http.Client{},
-		baseUrl: "https://www.brainyquote.com/",
-		apiUrl: "https://www.brainyquote.com/api/inf",
+func NewQuoteBrainyService(httpClient *http.Client) *QuoteBrainyService {
+	return &QuoteBrainyService{
+		httpClient: httpClient,
+		baseUrl:    "https://www.brainyquote.com/",
+		apiUrl:     "https://www.brainyquote.com/api/inf",
 	}
 }
 
 type QuotesContentResponse struct {
 	Content string `json:"content"`
-	Count int `json:"qCount"`
+	Count   int    `json:"qCount"`
 }
 
 type QuotesContentRequest struct {
-	Typ string `json:"typ"`
-	Lang string `json:"langc"`
-	V string `json:"v"`
-	Ab string `json:"ab"`
-	Pagination int `json:"pg"`
-	Id string `json:"id"`
-	Vid string `json:"vid"`
-	Fdd string `json:"fdd"`
-	M int `json:"m"`
+	Typ        string `json:"typ"`
+	Lang       string `json:"langc"`
+	V          string `json:"v"`
+	Ab         string `json:"ab"`
+	Pagination int    `json:"pg"`
+	Id         string `json:"id"`
+	Vid        string `json:"vid"`
+	Fdd        string `json:"fdd"`
+	M          int    `json:"m"`
 }
 
 func NewQuotesContentReq(vid string, pid string, pg int) *QuotesContentRequest {
 	return &QuotesContentRequest{
-		Typ: "author",
-		Lang: "en",
-		V: "9.0.2:3290921",
-		Ab: "a",
+		Typ:        "author",
+		Lang:       "en",
+		V:          "9.0.2:3290921",
+		Ab:         "a",
 		Pagination: pg,
-		Id: pid,
-		Vid: vid,
-		Fdd: "d",
-		M: 0,
+		Id:         pid,
+		Vid:        vid,
+		Fdd:        "d",
+		M:          0,
 	}
 }
 
-func (service *quoteBrainyService) findVidAndPersonId(link string) (
+func (service *QuoteBrainyService) findVidAndPersonId(link string) (
 	vid string, pid string, err error) {
 
-	req, err := http.NewRequest("GET", service.baseUrl +link, nil)
+	req, err := http.NewRequest("GET", service.baseUrl+link, nil)
 	if err != nil {
 		return
 	}
@@ -94,7 +94,7 @@ func (service *quoteBrainyService) findVidAndPersonId(link string) (
 	return
 }
 
-func (service *quoteBrainyService) readQuotesFromReader(reader io.Reader) (quotes []model.Quote, err error) {
+func (service *QuoteBrainyService) readQuotesFromReader(reader io.Reader) (quotes []model.Quote, err error) {
 	docs, err := goquery.NewDocumentFromReader(reader)
 	if err != nil {
 		return
@@ -113,7 +113,7 @@ func (service *quoteBrainyService) readQuotesFromReader(reader io.Reader) (quote
 	return
 }
 
-func (service *quoteBrainyService) findQuotesWithPagination(vid string, pid string, pg int) ([]model.Quote, error) {
+func (service *QuoteBrainyService) findQuotesWithPagination(vid string, pid string, pg int) ([]model.Quote, error) {
 	reqBody := NewQuotesContentReq(vid, pid, pg)
 
 	reqBodyStr, err := json.Marshal(reqBody)
@@ -153,7 +153,7 @@ func (service *quoteBrainyService) findQuotesWithPagination(vid string, pid stri
 	return service.readQuotesFromReader(strings.NewReader(resBody.Content))
 }
 
-func (service *quoteBrainyService) FindAllQuotesByLink(link string) (quotes []model.Quote, lastPagi int, err error) {
+func (service *QuoteBrainyService) FindAllQuotesByLink(link string) (quotes []model.Quote, lastPagi int, err error) {
 	vid, pid, err := service.findVidAndPersonId(link)
 	if err != nil {
 		return

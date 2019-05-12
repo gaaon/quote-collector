@@ -8,12 +8,12 @@ import (
 
 type BrainyQuoteServiceTestSuite struct {
 	suite.Suite
-	service *peopleBrainyService
+	service *PeopleBrainyService
 }
 
 func (suite *BrainyQuoteServiceTestSuite) SetupTest() {
 	var (
-		err error
+		err                   error
 		peopleSnapshotService = NewPeopleSnapshotService()
 	)
 
@@ -44,4 +44,3 @@ func (suite *BrainyQuoteServiceTestSuite) TestFindPeopleListWithPagination() {
 	assertT.NoError(err)
 	assertT.Len(peopleList, 0)
 }
-

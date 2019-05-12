@@ -10,10 +10,10 @@ import (
 const defaultDBName = "quote-collector"
 
 var (
-	mongoClient *mongo.Client
-	ctx context.Context
-	peopleCollection *mongo.Collection
-	quoteCollection *mongo.Collection
+	mongoClient           *mongo.Client
+	ctx                   context.Context
+	peopleCollection      *mongo.Collection
+	quoteCollection       *mongo.Collection
 	translationCollection *mongo.Collection
 )
 

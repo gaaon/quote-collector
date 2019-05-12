@@ -25,7 +25,7 @@ func (service *peopleSnapshotService) writePeopleListIntoWriter(
 		_, _ = writer.Write([]byte(
 			name.FullName + "\t" + name.ReversedName + "\t" + name.Link))
 
-		if i != len(peopleList) - 1 {
+		if i != len(peopleList)-1 {
 			_, _ = writer.Write([]byte("\n"))
 		}
 	}

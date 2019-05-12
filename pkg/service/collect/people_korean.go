@@ -18,7 +18,7 @@ func NewNameTranslateService(httpClient *http.Client) *NameTranslateService {
 	}
 }
 
-func (service *NameTranslateService) TranslateFullNameToKorean(fullName string) (koreanName string, err error){
+func (service *NameTranslateService) TranslateFullNameToKorean(fullName string) (koreanName string, err error) {
 	urlStr := "https://google.co.kr/search?ie=UTF-8&q=" + url.QueryEscape(fullName)
 	var (
 		req *http.Request

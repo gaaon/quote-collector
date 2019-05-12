@@ -15,18 +15,18 @@ import (
 	"sync"
 )
 
-type peopleBrainyService struct {
-	authorBaseUrl string
-	httpClient *http.Client
+type PeopleBrainyService struct {
+	authorBaseUrl         string
+	httpClient            *http.Client
 	peopleSnapshotService *peopleSnapshotService
 }
 
-func NewBrainyQuoteService(peopleSnapshotService *peopleSnapshotService) (*peopleBrainyService, error) {
+func NewPeopleBrainyService(peopleSnapshotService *peopleSnapshotService) (*PeopleBrainyService, error) {
 	if peopleSnapshotService == nil {
 		return nil, errors.New("peopleSnapshotService cannot be nil")
 	}
 
-	return &peopleBrainyService{
+	return &PeopleBrainyService{
 		authorBaseUrl: "https://www.brainyquote.com/authors/",
 		httpClient: &http.Client{
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -37,7 +37,7 @@ func NewBrainyQuoteService(peopleSnapshotService *peopleSnapshotService) (*peopl
 	}, nil
 }
 
-func (service *peopleBrainyService) findPeopleListByBody(bodyReader io.Reader) (
+func (service *PeopleBrainyService) findPeopleListByBody(bodyReader io.Reader) (
 	peopleList []model.Person, err error) {
 
 	var doc *goquery.Document
@@ -45,7 +45,7 @@ func (service *peopleBrainyService) findPeopleListByBody(bodyReader io.Reader) (
 		return
 	}
 
-	doc.Find("div.bq_s > table > tbody> tr").Each(func (a int, s *goquery.Selection) {
+	doc.Find("div.bq_s > table > tbody> tr").Each(func(a int, s *goquery.Selection) {
 		onClickValue, _ := s.Attr("onclick")
 
 		link := strings.Trim(
@@ -56,45 +56,45 @@ func (service *peopleBrainyService) findPeopleListByBody(bodyReader io.Reader) (
 
 		peopleList = append(peopleList, model.Person{
 			FullName: fullName,
-			Link: link,
-			Source: constant.SOURCE_BRAINY_QUOTE,
+			Link:     link,
+			Source:   constant.SOURCE_BRAINY_QUOTE,
 		})
 	})
 
 	return
 }
 
-func (service *peopleBrainyService) findPeopleListStartsWith(
+func (service *PeopleBrainyService) findPeopleListStartsWith(
 	nameFirstChar string, pagination int) (peopleList []model.Person, err error) {
 
-		brainyPeopleListUrl := service.authorBaseUrl + nameFirstChar
-		if pagination != 1 {
-			brainyPeopleListUrl += strconv.Itoa(pagination)
-		}
+	brainyPeopleListUrl := service.authorBaseUrl + nameFirstChar
+	if pagination != 1 {
+		brainyPeopleListUrl += strconv.Itoa(pagination)
+	}
 
-		var (
-			req *http.Request
-			res *http.Response
-		)
+	var (
+		req *http.Request
+		res *http.Response
+	)
 
-		if req, err = http.NewRequest("GET", brainyPeopleListUrl, nil); err != nil {
-			return
-		}
+	if req, err = http.NewRequest("GET", brainyPeopleListUrl, nil); err != nil {
+		return
+	}
 
-		if res, err = service.httpClient.Do(req); err != nil {
-			return
-		}
+	if res, err = service.httpClient.Do(req); err != nil {
+		return
+	}
 
-		if res.StatusCode == 301 || res.StatusCode == 404 { // page not exists
-			return
-		}
+	if res.StatusCode == 301 || res.StatusCode == 404 { // page not exists
+		return
+	}
 
-		defer res.Body.Close()
+	defer res.Body.Close()
 
-		return service.findPeopleListByBody(res.Body)
+	return service.findPeopleListByBody(res.Body)
 }
 
-func (service *peopleBrainyService) FindPeopleListFromSnapshot() (peopleList []model.Person, err error){
+func (service *PeopleBrainyService) FindPeopleListFromSnapshotOrRemote() (peopleList []model.Person, err error) {
 
 	peopleSnapshotService := service.peopleSnapshotService
 

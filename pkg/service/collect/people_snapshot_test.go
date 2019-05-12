@@ -27,11 +27,11 @@ func (suite *PeopleSnapshotServiceTestSuite) TestWritePeopleListIntoWriter() {
 	peopleList := []model.Person{
 		{
 			FullName: "Albert Einstein",
-			Link: "/authors/albert_einstein",
+			Link:     "/authors/albert_einstein",
 		},
 		{
 			FullName: "Michael Jackson",
-			Link: "/authors/michael_jackson",
+			Link:     "/authors/michael_jackson",
 		},
 	}
 

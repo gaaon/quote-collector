@@ -13,4 +13,3 @@ type Quote struct {
 	Content     string   // original content
 	SubContents []string // sub contents includes translate, description
 }
-

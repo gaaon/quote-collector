@@ -1,147 +1,139 @@
 package main
 
 import (
-	"fmt"
-	"github.com/gaaon/quote-collector/pkg/model"
 	"github.com/gaaon/quote-collector/pkg/repository"
 	"github.com/gaaon/quote-collector/pkg/service/collect"
 	"github.com/gaaon/quote-collector/pkg/service/notification"
-	"io/ioutil"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 	"os"
-	"strings"
-	"time"
 )
 
-func findKoreanNameMapFromSnapshot() (koreanNameMap map[string]string, err error){
-	koreanNameMap = make(map[string]string)
-
-	var f *os.File
-	f, err = os.Open("data/korean_snapshot.txt")
-	if err != nil {
-		return
-	}
-
-	defer f.Close()
-
-	var content []byte
-	if content, err = ioutil.ReadAll(f); err != nil {
-		return
-	}
-
-	splits := strings.Split(string(content), "\n")
-	for _, split := range splits {
-		if split == "" {
-			continue
-		}
-
-		info := strings.Split(split, "\t")
-
-		koreanNameMap[info[0]] = info[2]
-	}
-
-	return
+type MainApp struct {
+	httpClient               *http.Client
+	env                      string
+	task                     string
+	koreanTransIntervalInSec int
+	nameTranslateService     *collect.NameTranslateService
+	peopleBrainyService      *collect.PeopleBrainyService
+	pushOverService          *notification.PushoverService
 }
 
-var sendNoti = false
+func NewMainApp(env string, task string) (*MainApp, error) {
+	client := &http.Client{}
 
-func findKoreanNameFromEng(nameTranslateService *collect.NameTranslateService, peopleList []model.Person) {
-	f, _ := os.OpenFile("data/korean_snapshot.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
-	failed, _ := os.OpenFile("data/failed_to_find.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+	peopleSnapshotService := collect.NewPeopleSnapshotService()
+	peopleBrainyService, err := collect.NewPeopleBrainyService(peopleSnapshotService)
+	if err != nil {
+		return nil, err
+	}
 
-	for i := 0; i < len(peopleList); i++ {
-		original := peopleList[i]
-		k, err  := nameTranslateService.TranslateFullNameToKorean(original.FullName)
-		if err != nil {
-			fmt.Println(err.Error())
+	pushOverService, err := notification.NewPushoverService(client)
+	if err != nil {
+		return nil, err
+	}
 
-			if err.Error() == "too many request status code from server" && sendNoti == false {
-				if err2 := notification.SendNotiToDevice("429 comes", "quote-collector server"); err2 != nil {
-					log.Fatal(err2)
+	return &MainApp{
+		httpClient:               client,
+		env:                      env,
+		task:                     task,
+		koreanTransIntervalInSec: 60,
+		nameTranslateService:     collect.NewNameTranslateService(client),
+		peopleBrainyService:      peopleBrainyService,
+		pushOverService:          pushOverService,
+	}, nil
+}
+
+func (mainApp *MainApp) Run() {
+	switch mainApp.env {
+	case "file":
+		{
+			switch mainApp.task {
+			case "find":
+				{
+					peopleList, err := mainApp.peopleBrainyService.FindPeopleListFromSnapshotOrRemote()
+					if err != nil {
+						log.Fatal(err)
+					}
+
+					log.Infof("find people count %d", len(peopleList))
 				}
-				sendNoti = true
-			}
+			case "korean":
+				{
+					log.Info("start translating korean names")
 
-			continue
-		}
+					peopleList, err := mainApp.peopleBrainyService.FindPeopleListFromSnapshotOrRemote()
+					if err != nil {
+						log.Fatal(err)
+					}
 
-		if k == "" {
-			_, _ = failed.WriteString(original.FullName + "\t" + original.ReversedName + "\n")
-		} else {
-			_, err = f.WriteString(original.FullName + "\t" + original.ReversedName + "\t" + k + "\n")
-			if err != nil {
-				log.Fatal(err)
-			}
-			if err = saveLastSuccessKoreanTranslation(original.FullName); err != nil {
-				log.Fatal(err)
-			}
-		}
+					hoursToCollect := len(peopleList) * mainApp.koreanTransIntervalInSec / 60 / 60
+					log.Infof("time for finding: %d hours\n", hoursToCollect)
 
-		if i % 100 == 0 {
-			fmt.Printf("%d개 다운 성공\n", i)
-		}
+					lastIndex := mainApp.findLastSuccessKoreanTranslation(peopleList)
+					if err = mainApp.pushOverService.SendNotiToDevice("start translating fullname to korean"); err != nil {
+						log.Fatal(err)
+					}
 
-		interval := 60
-		println("sleep time: ", interval, "seconds")
-		time.Sleep(time.Duration(interval) * time.Second)
-	}
-}
+					if err = mainApp.findKoreanNamesFromFullNames(peopleList[lastIndex+1:]); err != nil {
+						log.Error(err)
 
-func findLastSuccessKoreanTranslation(peopleList []model.Person) int {
-	f, err := os.Open("data/lastSuccessKoreanTrans.txt")
-	if os.IsNotExist(err) {
-		return -1
-	}
-	defer f.Close()
+						var err2 error
+						if err.Error() == "too many request status code from server" {
+							err2 = mainApp.pushOverService.SendNotiToDevice("429 comes")
+						} else {
+							err2 = mainApp.pushOverService.SendNotiToDevice("something happens\n" + err.Error())
+						}
 
-	contentRaw, err := ioutil.ReadAll(f)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	content := string(contentRaw)
-
-	if content == "" {
-		return -1
-	} else {
-		for i, person := range peopleList {
-			if person.FullName == content {
-				return i
+						if err2 != nil {
+							log.Fatal(err2)
+						}
+					} else {
+						err2 := mainApp.pushOverService.SendNotiToDevice("success translating korean names")
+						if err2 != nil {
+							log.Fatal(err2)
+						}
+					}
+				}
+			default:
+				log.Fatal("no such collect task")
 			}
 		}
 
-		return -1
-	}
-}
+	case "db":
+		{
+			switch mainApp.task {
+			case "migrate":
+				{
+					peopleList, err := mainApp.peopleBrainyService.FindPeopleListFromSnapshotOrRemote()
+					if err != nil {
+						log.Fatal(err)
+					}
 
-func saveLastSuccessKoreanTranslation(fullName string) error {
-	return ioutil.WriteFile(
-		"data/lastSuccessKoreanTrans.txt",
-		[]byte(fullName),
-		0644)
-}
+					if err = repository.InsertPeopleListIntoDB(peopleList); err != nil {
+						log.Fatal(err)
+					}
+				}
+			case "find":
+				{
+					peopleList, err := repository.FindPeopleList()
+					if err != nil {
+						log.Fatal(err)
+					}
 
-func migrateKoreanSnapshotWithDefault(peopleList []model.Person, koreanNameMap map[string]string) (
-	migratedPersonList []model.Person, err error) {
-
-	for _, person := range peopleList {
-		koreanName, exists := koreanNameMap[person.FullName]
-		if exists {
-			migratedPersonList = append(migratedPersonList, model.Person{
-				FullName: person.FullName,
-				ReversedName: person.ReversedName,
-				Link: person.Link,
-				KoreanName: koreanName,
-			})
+					println("Find people count ", len(peopleList))
+				}
+			default:
+				log.Fatal("no such collect task")
+			}
 		}
+	default:
+		log.Fatal("no such collect env")
 	}
-
-	return
 }
 
 func main() {
-	println("Start collecting people list")
+	log.Info("Start collecting people list")
 
 	env, exists := os.LookupEnv("COLLECT_ENV")
 	if !exists {
@@ -153,71 +145,9 @@ func main() {
 		task = "find"
 	}
 
-	client := &http.Client{}
-	peopleSnapshotService := collect.NewPeopleSnapshotService()
-	nameTranslateService := collect.NewNameTranslateService(client)
-	brainyQuoteService, err := collect.NewBrainyQuoteService(peopleSnapshotService)
+	mainApp, err := NewMainApp(env, task)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	switch env {
-	case "file": {
-		switch task {
-		case "find": {
-			peopleList, err := brainyQuoteService.FindPeopleListFromSnapshot()
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			println("Find people count ", len(peopleList))
-		}
-		case "korean": {
-			peopleList, err := brainyQuoteService.FindPeopleListFromSnapshot()
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			hoursToCollect := len(peopleList) * 60 / 60 / 60
-			lastIndex := findLastSuccessKoreanTranslation(peopleList)
-
-			fmt.Printf("time for finding: %d hours\n", hoursToCollect)
-
-			if err = notification.SendNotiToDevice("test start message", "quote-collector server"); err != nil {
-				log.Fatal(err)
-			}
-			findKoreanNameFromEng(nameTranslateService, peopleList[lastIndex+1:])
-		}
-		default:
-			log.Fatal("no such collect task")
-		}
-
-	}
-
-	case "db": {
-		switch task {
-		case "migrate": {
-			peopleList, err := peopleSnapshotService.FindPeopleList()
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			if err = repository.InsertPeopleListIntoDB(peopleList); err != nil {
-				log.Fatal(err)
-			}
-		}
-		case "find": {
-			peopleList, err := repository.FindPeopleList()
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			println("Find people count ", len(peopleList))
-		}
-		}
-	}
-	default:
-		log.Fatal("no such collect env")
-	}
-
+	mainApp.Run()
 }

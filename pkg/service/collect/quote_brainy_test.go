@@ -9,7 +9,7 @@ import (
 
 type QuoteBrainyServiceTestSuite struct {
 	suite.Suite
-	service *quoteBrainyService
+	service *QuoteBrainyService
 }
 
 func (suite *QuoteBrainyServiceTestSuite) SetupTest() {
@@ -19,7 +19,6 @@ func (suite *QuoteBrainyServiceTestSuite) SetupTest() {
 func TestQuoteBrainyServiceTestSuite(t *testing.T) {
 	suite.Run(t, new(QuoteBrainyServiceTestSuite))
 }
-
 
 func (suite *QuoteBrainyServiceTestSuite) TestFindVidAndPersonIdByLink() {
 	assertT := assert.New(suite.T())

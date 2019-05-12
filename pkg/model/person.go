@@ -6,12 +6,12 @@ import (
 )
 
 type Person struct {
-	Id *primitive.ObjectID `bson:"_id,omitempty"`
-	FullName string `bson:"fullName,omitempty"`
-	ReversedName string `bson:"-"`
-	Link string `bson:"link,omitempty"`
-	KoreanName string `bson:"koreanName,omitempty"`
-	Source string `bson:"source,omitempty"`
+	Id           *primitive.ObjectID `bson:"_id,omitempty"`
+	FullName     string              `bson:"fullName,omitempty"`
+	ReversedName string              `bson:"-"`
+	Link         string              `bson:"link,omitempty"`
+	KoreanName   string              `bson:"koreanName,omitempty"`
+	Source       string              `bson:"source,omitempty"`
 }
 
 type PeopleSorts []Person

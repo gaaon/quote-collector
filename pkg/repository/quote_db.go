@@ -19,9 +19,9 @@ func InsertQuoteEntitiesIntoDB(quotes []model.QuoteEntity) error {
 func GetQuoteEntitiesWithPerson(quotes []model.Quote, person model.Person) (quoteEntities []model.QuoteEntity) {
 	for _, quote := range quotes {
 		quoteEntities = append(quoteEntities, model.QuoteEntity{
-			Content: quote.Content,
+			Content:     quote.Content,
 			SubContents: quote.SubContents,
-			CreatorId: person.Id,
+			CreatorId:   person.Id,
 		})
 	}
 
