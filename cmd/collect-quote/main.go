@@ -58,7 +58,7 @@ func (mainApp *MainApp) Run() {
 				log.Fatal(err)
 			}
 
-			startIdx := findLastSuccessQuoteTranslation(quoteEntities) + 1
+			startIdx := mainApp.findLastSuccessQuoteTranslation(quoteEntities) + 1
 			println("find startIdx: ", startIdx)
 
 			for i, quoteEntity := range quoteEntities {
@@ -66,7 +66,7 @@ func (mainApp *MainApp) Run() {
 					continue
 				}
 
-				content := filterQuoteContent(quoteEntity.Content)
+				content := mainApp.filterQuoteContent(quoteEntity.Content)
 				if len(content) > 100 {
 					continue
 				}
@@ -91,7 +91,7 @@ func (mainApp *MainApp) Run() {
 				println("translated(naver): ", translatedByNaver)
 				println("translated(google): ", translatedByGoogle)
 
-				if err = saveLastSuccessQuoteTranslation(quoteEntity.Id); err != nil {
+				if err = mainApp.saveLastSuccessQuoteTranslation(quoteEntity.Id); err != nil {
 					log.Fatal(err)
 				}
 
