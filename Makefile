@@ -12,10 +12,10 @@ build:
 	CGO_ENABLED=0 go build -o bin/${BINARY} ${BUILD_FLAGS} cmd/quote-collector/*.go
 
 collect-people:
-	go run cmd/collect-people/main.go
+	go run cmd/collect-people/main.go cmd/collect-people/util.go
 
 collect-quote:
-	go run cmd/collect-quote/main.go
+	go run cmd/collect-quote/main.go cmd/collect-quote/util.go
 
 run:
 	go run cmd/quote-collector/main.go ${FILE_VERSION}
