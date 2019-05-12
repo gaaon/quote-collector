@@ -6,6 +6,7 @@ import (
 	"errors"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gaaon/quote-collector/pkg/model"
+	log "github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -137,6 +138,7 @@ func (service *QuoteBrainyService) findQuotesWithPagination(vid string, pid stri
 	defer res.Body.Close()
 
 	if res.StatusCode != 200 {
+		log.Warnf("status code: %d", res.StatusCode)
 		return nil, errors.New("status code is not ok")
 	}
 
