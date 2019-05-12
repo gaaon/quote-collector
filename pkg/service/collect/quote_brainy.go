@@ -142,6 +142,7 @@ func (service *QuoteBrainyService) findQuotesWithPagination(vid string, pid stri
 
 		log.Warnf("status code: %d", res.StatusCode)
 		log.Warnf("%s", string(bodyRaw))
+		log.Warnf("%s", reqBodyStr)
 		return nil, errors.New("status code is not ok")
 	}
 
