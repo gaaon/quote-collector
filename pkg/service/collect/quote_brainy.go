@@ -10,6 +10,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -22,7 +23,7 @@ type QuoteBrainyService struct {
 func NewQuoteBrainyService(httpClient *http.Client) *QuoteBrainyService {
 	return &QuoteBrainyService{
 		httpClient: httpClient,
-		baseUrl:    "https://www.brainyquote.com/",
+		baseUrl:    "https://www.brainyquote.com",
 		apiUrl:     "https://www.brainyquote.com/api/inf",
 	}
 }
@@ -61,7 +62,10 @@ func NewQuotesContentReq(vid string, pid string, pg int) *QuotesContentRequest {
 func (service *QuoteBrainyService) findVidAndPersonId(link string) (
 	vid string, pid string, err error) {
 
-	req, err := http.NewRequest("GET", service.baseUrl+link, nil)
+	target := strings.ReplaceAll(url.QueryEscape(link), "%2F", "/")
+	target = strings.ReplaceAll(target, "%25", "%")
+
+	req, err := http.NewRequest("GET", service.baseUrl+target, nil)
 	if err != nil {
 		return
 	}
@@ -78,7 +82,6 @@ func (service *QuoteBrainyService) findVidAndPersonId(link string) (
 		return
 	}
 
-	_ = ioutil.WriteFile("data/res.html", rawBody, 0644)
 	lines := strings.Split(string(rawBody), "\n")
 
 	for _, line := range lines {
