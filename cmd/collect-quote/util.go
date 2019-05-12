@@ -34,7 +34,7 @@ func (mainApp *MainApp) findQuotesFromBrainy() error {
 
 	for i, person := range peopleList {
 		if i == lastSuccessIdx {
-			log.Info("continue collecting quotes after %s", person.FullName)
+			log.Infof("continue collecting quotes after %s", person.FullName)
 		}
 		if i <= lastSuccessIdx {
 			continue
