@@ -78,6 +78,7 @@ func (service *QuoteBrainyService) findVidAndPersonId(link string) (
 		return
 	}
 
+	_ = ioutil.WriteFile("data/res.html", rawBody, 0644)
 	lines := strings.Split(string(rawBody), "\n")
 
 	for _, line := range lines {
