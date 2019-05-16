@@ -54,7 +54,7 @@ func (mainApp *MainApp) findQuotesFromBrainy() error {
 			return err
 		}
 
-		time.Sleep(10 * time.Second)
+		time.Sleep(60 * time.Second)
 	}
 
 	return nil
