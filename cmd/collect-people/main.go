@@ -16,7 +16,7 @@ type MainApp struct {
 	koreanTransIntervalInSec int
 	nameTranslateService     *collect.NameTranslateService
 	peopleBrainyService      *collect.PeopleBrainyService
-	pushOverService          *notification.PushoverService
+	notiService          	 notification.NotiService
 }
 
 func NewMainApp(env string, task string) (*MainApp, error) {
@@ -28,7 +28,7 @@ func NewMainApp(env string, task string) (*MainApp, error) {
 		return nil, err
 	}
 
-	pushOverService, err := notification.NewPushoverService(client)
+	notiService, err := notification.NewSlackService(client)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +40,7 @@ func NewMainApp(env string, task string) (*MainApp, error) {
 		koreanTransIntervalInSec: 60,
 		nameTranslateService:     collect.NewNameTranslateService(client),
 		peopleBrainyService:      peopleBrainyService,
-		pushOverService:          pushOverService,
+		notiService:              notiService,
 	}, nil
 }
 
@@ -71,7 +71,7 @@ func (mainApp *MainApp) Run() {
 					log.Infof("time for finding: %d hours\n", hoursToCollect)
 
 					lastIndex := mainApp.findLastSuccessKoreanTranslation(peopleList)
-					if err = mainApp.pushOverService.SendNotiToDevice("start translating fullname to korean"); err != nil {
+					if err = mainApp.notiService.SendNotiToDevice("[korean] start translating fullname to korean"); err != nil {
 						log.Fatal(err)
 					}
 
@@ -80,16 +80,16 @@ func (mainApp *MainApp) Run() {
 
 						var err2 error
 						if err.Error() == "too many request status code from server" {
-							err2 = mainApp.pushOverService.SendNotiToDevice("429 comes")
+							err2 = mainApp.notiService.SendNotiToDevice("[korean] 429 comes")
 						} else {
-							err2 = mainApp.pushOverService.SendNotiToDevice("something happens\n" + err.Error())
+							err2 = mainApp.notiService.SendNotiToDevice("[korean] something happens\n" + err.Error())
 						}
 
 						if err2 != nil {
 							log.Fatal(err2)
 						}
 					} else {
-						err2 := mainApp.pushOverService.SendNotiToDevice("success translating korean names")
+						err2 := mainApp.notiService.SendNotiToDevice("[korean] success translating korean names")
 						if err2 != nil {
 							log.Fatal(err2)
 						}

@@ -14,14 +14,14 @@ import (
 type MainApp struct {
 	task            string
 	httpClient      *http.Client
-	pushOverService *notification.PushoverService
+	notiService 	notification.NotiService
 	quoteBrainyService *collect.QuoteBrainyService
 }
 
 func NewMainApp(task string) (*MainApp, error) {
 	httpClient := &http.Client{}
 
-	pushoverService, err := notification.NewPushoverService(httpClient)
+	notiService, err := notification.NewSlackService(httpClient)
 	if err != nil {
 		return nil, err
 	}
@@ -29,7 +29,7 @@ func NewMainApp(task string) (*MainApp, error) {
 	return &MainApp{
 		task:       task,
 		httpClient: httpClient,
-		pushOverService: pushoverService,
+		notiService: notiService,
 		quoteBrainyService: collect.NewQuoteBrainyService(httpClient),
 	}, nil
 }
@@ -39,13 +39,13 @@ func (mainApp *MainApp) Run() {
 	case "find":
 		{
 			var err error
-			if err = mainApp.pushOverService.SendNotiToDevice("start collecting quotes from brainy"); err != nil {
+			if err = mainApp.notiService.SendNotiToDevice("[quotes] start collecting quotes from brainy"); err != nil {
 				log.Fatal(err)
 			}
 
 			if err = mainApp.findQuotesFromBrainy(); err != nil {
 				log.Error(err)
-				err2 := mainApp.pushOverService.SendNotiToDevice("collecting quotes has problem\n" + err.Error())
+				err2 := mainApp.notiService.SendNotiToDevice("[quotes] collecting quotes has problem\n" + err.Error())
 				if err2 != nil {
 					log.Fatal(err2)
 				}
